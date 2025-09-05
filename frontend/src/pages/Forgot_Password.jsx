@@ -142,18 +142,17 @@ function Forgot_Password() {
       setError("");
       setIsLoading(true);
       await authAPI.resetPassword(email, password); // 🔗 backend
+      
       toast.success("Password reset successful! Redirecting to login...");
       
-      // Don't reset form immediately to avoid username recognition issues
-      // Just redirect to login page after showing success message
+      // ✅ Redirect user to login page
       setTimeout(() => {
-        // Reset form after redirect
+        navigate("/login");
         setStep("email");
         setEmail("");
         setOtp(["", "", "", ""]);
         setPassword("");
         setConfirmPassword("");
-        navigate('/login');
       }, 2000);
     } catch (err) {
       const errorMessage = err.response?.data?.message || "Failed to reset password";
