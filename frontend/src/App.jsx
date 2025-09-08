@@ -6,6 +6,7 @@ import './App.css'
 import AuthPage from './pages/AuthPage'
 import AdminDashboard from './pages/AdminDashboard'
 import VolunteerDashboard from './pages/VolunteerDashboard'
+import NGODashboard from './pages/NGODashboard'
 import AppFooter from './components/AppFooter';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Side';
@@ -36,6 +37,12 @@ function App() {
           <Route path="/volunteer" element={<VolunteerLayout />}>
             <Route index element={<VolunteerDashboard />} />
             <Route path="dashboard" element={<VolunteerDashboard />} />
+          </Route>
+
+          {/* NGO Routes */}
+          <Route path="/ngo" element={<NGOLayout />}>
+            <Route index element={<NGODashboard />} />
+            <Route path="dashboard" element={<NGODashboard />} />
           </Route>
 
           {/* Catch all route - redirect to home */}
@@ -73,6 +80,20 @@ const AdminLayout = () => {
 }
 
 const VolunteerLayout = () => {
+  return (
+    <div className="min-h-screen bg-gray-50 pt-16">
+      <Navbar />
+      <Sidebar />
+      {/* Main content area with left margin to account for sidebar on desktop only */}
+      <div className="lg:ml-64">
+        <Outlet />
+        <AppFooter />
+      </div>
+    </div>
+  )
+}
+
+const NGOLayout = () => {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <Navbar />

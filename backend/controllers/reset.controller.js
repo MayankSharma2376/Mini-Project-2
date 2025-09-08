@@ -56,7 +56,7 @@ const sendOtp = async (req, res) => {
       await transporter.sendMail({
         from: `"WasteZero Support" <${process.env.EMAIL_USER}>`,
         to: email,
-        subject: "🔐 WasteZero - Your Password Reset OTP",
+        subject: "WasteZero - Your Password Reset OTP",
         html: `
           <div style="font-family: Arial, sans-serif; background: #f9fafb; padding: 30px; text-align: center;">
             <div style="max-width: 500px; margin: auto; background: #ffffff; border-radius: 12px; padding: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">

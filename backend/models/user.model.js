@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
 
   role: {
     type: String,
-    enum: ['volunteer', 'NGO', 'admin'],
+    enum: ['volunteer', 'ngo', 'admin'],
     required: true,
     default: 'volunteer',
   },
@@ -42,25 +42,28 @@ const userSchema = new mongoose.Schema({
     default: '',
     maxLength: 400,
   },
-  otp: {
-    type: String
+  otp: { 
+    type: String 
   }, // store OTP temporarily
 
   otpExpires: {
     type: Date,
+  },
+  isVerified: {
+    type: Boolean,
+    default: false
   }
-},
-  { timestamps: true }
-);
+  
+})
 
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-
+  if(!this.isModified("password")) return next();
+  
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
     next();
-  }
+  } 
   catch (error) {
     next(error);
   }

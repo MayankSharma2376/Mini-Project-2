@@ -24,6 +24,12 @@ export const authAPI = {
     return response.data;
   },
 
+  verifyUser: async (data) => {
+    const response = await api.post('/auth/verify-user', data);
+    return response.data;
+  },  
+  
+
   // 🔹 Forgot Password Flow
   sendOtp: async (email) => {
   const response = await api.post('/auth/send-otp', { email });
@@ -133,6 +139,74 @@ export const adminAPI = {
     const response = await api.get(`/admin/reports/export?type=${reportType}&format=${format}`, {
       responseType: 'blob'
     });
+    return response.data;
+  },
+};
+
+// NGO API endpoints
+export const ngoAPI = {
+  // Dashboard data
+  getDashboardStats: async () => {
+    const response = await api.get('/ngo/dashboard/stats');
+    return response.data;
+  },
+
+  getRecentActivities: async () => {
+    const response = await api.get('/ngo/dashboard/activities');
+    return response.data;
+  },
+
+  // Event management (NGO can only manage their own events)
+  getMyEvents: async () => {
+    const response = await api.get('/ngo/events');
+    return response.data;
+  },
+
+  createEvent: async (eventData) => {
+    const response = await api.post('/ngo/events', eventData);
+    return response.data;
+  },
+
+  updateEvent: async (eventId, eventData) => {
+    const response = await api.put(`/ngo/events/${eventId}`, eventData);
+    return response.data;
+  },
+
+  deleteEvent: async (eventId) => {
+    const response = await api.delete(`/ngo/events/${eventId}`);
+    return response.data;
+  },
+
+  getEventRegistrations: async (eventId) => {
+    const response = await api.get(`/ngo/events/${eventId}/registrations`);
+    return response.data;
+  },
+
+  // Volunteer management (volunteers registered for NGO events)
+  getMyVolunteers: async () => {
+    const response = await api.get('/ngo/volunteers');
+    return response.data;
+  },
+
+  getVolunteerDetails: async (volunteerId) => {
+    const response = await api.get(`/ngo/volunteers/${volunteerId}`);
+    return response.data;
+  },
+
+  // Communication
+  sendMessageToVolunteer: async (volunteerId, message) => {
+    const response = await api.post(`/ngo/volunteers/${volunteerId}/message`, { message });
+    return response.data;
+  },
+
+  // Reports (limited scope)
+  getEventReport: async (eventId) => {
+    const response = await api.get(`/ngo/reports/event/${eventId}`);
+    return response.data;
+  },
+
+  getVolunteerReport: async (period = 'month') => {
+    const response = await api.get(`/ngo/reports/volunteers?period=${period}`);
     return response.data;
   },
 };

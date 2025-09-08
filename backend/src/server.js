@@ -2,6 +2,7 @@ const dotenv = require('dotenv')
 const express = require('express');
 const cors = require('cors');
 const authRoute = require('../routes/auth.routes.js');
+const ngoRoute = require('../routes/ngo.routes.js');
 const connectDb = require('../lib/connectDb.js');
 const cookieParser = require('cookie-parser');
 
@@ -23,6 +24,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/auth', authRoute);
+app.use('/api/ngo', ngoRoute);
 
 app.listen(process.env.PORT, () => {
   console.log('Server is running on http://localhost:4000');
