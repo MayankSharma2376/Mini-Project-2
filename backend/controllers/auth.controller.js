@@ -1,98 +1,152 @@
-const userModel = require('../models/user.model');
+const User = require('../models/user.model');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
+const dotenv = require('dotenv');
+dotenv.config();
 
+// Nodemailer setup
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
+
+// 1. Register (Send OTP)
 const register = async (req, res) => {
-  const { name, email, password, role, skills, location, bio } = req.body;
-
   try {
-    if (!email || !name || !password || !role || !skills || !location || !bio) {
+    const { name, email, password, role, skills, location, bio } = req.body;
+
+    if (!name || !email || !password || !role || !skills || !location || !bio) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters long" });
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ message: "Invalid email format" });
-    }
-
-    const existingUser = await userModel.findOne({ email });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: "User is already registered" });
+      return res.status(400).json({ message: "User already registered" });
     }
 
-    const newUser = await userModel.create({
+    // Generate 4-digit OTP
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+
+    // Create user in DB with OTP (not verified yet)
+    const newUser = await User.create({
       name,
       email,
       password,
       role,
       skills,
       location,
-      bio
+      bio,
+      otp,
+      otpExpires: Date.now() + 5 * 60 * 1000, // valid for 5 minutes
+      isVerified: false
     });
 
-    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
-    res.cookie("token", token, { httpOnly: true });
-    return res.status(201).json({ 
-      success: true, 
-      user: newUser,
-      token: token 
+    // Send OTP email
+    await transporter.sendMail({
+      from: `"WasteZero Support" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Verify your WasteZero account",
+      html: `
+        <div style="font-family: Arial, sans-serif; background: #f9fafb; padding: 30px; text-align: center;">
+          <div style="max-width: 500px; margin: auto; background: #ffffff; border-radius: 12px; padding: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+            <h2 style="color:#2f855a;">Welcome to WasteZero ♻️</h2>
+            <p style="color:#374151;">Please verify your email by entering the OTP below. It is valid for <b>5 minutes</b>.</p>
+            <div style="background:#ecfdf5; color:#065f46; font-size:24px; font-weight:bold; padding:15px; border-radius:8px; letter-spacing:6px; margin:20px 0;">
+              ${otp}
+            </div>
+            <p style="color:#6b7280; font-size:12px;">If you didn’t register, you can ignore this email.</p>
+          </div>
+        </div>
+      `
     });
-  }
-  catch (error) {
-    console.error('Error in controller: ', error);
-    return res.status(500).json({ message: 'Internal server error' });
-  }
 
+    return res.status(200).json({
+      success: true,
+      message: "OTP sent to email. Please verify to activate account.",
+      email
+    });
+
+  } catch (err) {
+    console.error("Error in register:", err);
+    res.status(500).json({ error: err.message });
+  }
 };
 
+// 2. Verify OTP (Activate account)
+const verifyRegistrationOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.otp !== otp || user.otpExpires < Date.now()) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    user.isVerified = true;
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    await user.save();
+
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+
+    res.cookie("token", token, { httpOnly: true });
+    res.status(200).json({ success: true, message: "Account verified successfully", user });
+  } catch (err) {
+    console.error("Error in verifyRegistrationOtp:", err); // 👈 Full error
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+// 3. Login (only if verified)
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const user = await User.findOne({ email });
 
-    if (!email || !password) {
-      return res.status(400).json({ message: "All Fields are required." });
-    }
-
-    const user = await userModel.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid email or password" });
-    }
+    if (!user) return res.status(400).json({ message: "Invalid email or password" });
+    if (!user.isVerified) return res.status(403).json({ message: "Please verify your account with OTP first" });
 
     const isPasswordCorrect = await user.comparePassword(password);
-    if (!isPasswordCorrect) {
-      return res.status(400).json({ message: "Invalid email or password" });
-    }
+    if (!isPasswordCorrect) return res.status(400).json({ message: "Invalid email or password" });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
     res.cookie("token", token, { httpOnly: true });
 
-    return res.status(200).json({ 
-      success: true, 
-      user: user,
-      token: token 
-    });
-  }
-  catch (error) {
-    console.error('Error in controller: ', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    res.status(200).json({ success: true, user, token });
+  } catch (err) {
+    console.error("Error in login:", err);
+    res.status(500).json({ error: err.message });
   }
 };
 
+// 4. Logout
 const logout = async (req, res) => {
-  try {
-    res.clearCookie("token");
-    return res.status(200).json({ success: true, message: "Logged out successfully" });
-  } catch (error) {
-    console.error('Error in controller: ', error);
-    return res.status(500).json({ message: 'Internal server error' });
-  }
+  res.clearCookie("token");
+  return res.status(200).json({ success: true, message: "Logged out successfully" });
 };
 
 module.exports = {
   register,
+  verifyRegistrationOtp,
   login,
   logout
 };

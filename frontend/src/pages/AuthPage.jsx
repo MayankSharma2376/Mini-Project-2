@@ -40,28 +40,6 @@ export default function AuthPage() {
     setIsLogin(location.pathname !== '/register');
   }, [location.pathname]);
 
-  // Load saved form data from localStorage on component mount
-  useEffect(() => {
-    const savedLoginData = localStorage.getItem('authPage_loginData');
-    const savedRegisterData = localStorage.getItem('authPage_registerData');
-    
-    if (savedLoginData) {
-      try {
-        setLoginData(JSON.parse(savedLoginData));
-      } catch (error) {
-        console.error('Error parsing saved login data:', error);
-      }
-    }
-    
-    if (savedRegisterData) {
-      try {
-        setRegisterData(JSON.parse(savedRegisterData));
-      } catch (error) {
-        console.error('Error parsing saved register data:', error);
-      }
-    }
-  }, []);
-
   // Login form state
   const [loginData, setLoginData] = useState({
     email: '',
@@ -84,35 +62,23 @@ export default function AuthPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Save login data to localStorage whenever it changes
-  useEffect(() => {
-    if (loginData.email || loginData.password) {
-      localStorage.setItem('authPage_loginData', JSON.stringify(loginData));
-    }
-  }, [loginData]);
-
-  // Save register data to localStorage whenever it changes
-  useEffect(() => {
-    if (registerData.name || registerData.email || registerData.password || 
-        registerData.confirmPassword || registerData.location || registerData.bio ||
-        registerData.skills.length > 0) {
-      localStorage.setItem('authPage_registerData', JSON.stringify(registerData));
-    }
-  }, [registerData]);
-
-  // Function to clear saved data (useful after successful login/registration)
-  const clearSavedData = () => {
-    localStorage.removeItem('authPage_loginData');
-    localStorage.removeItem('authPage_registerData');
-  };
-
-  // IMPROVEMENT: Clear only error/success messages when switching between Login and Register tabs
+  // IMPROVEMENT: Clear state when switching between Login and Register tabs
   useEffect(() => {
     setError('');
     setSuccess('');
     setShowPassword(false);
     setShowConfirmPassword(false);
-    // Don't clear form data - keep it for user convenience
+    setLoginData({ email: '', password: '' });
+    setRegisterData({
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      role: 'volunteer',
+      skills: [],
+      location: '',
+      bio: ''
+    });
   }, [isLogin]);
 
   // Handle typing in OTP
@@ -170,14 +136,12 @@ export default function AuthPage() {
       setSuccess('Login successful! Redirecting...');
       localStorage.setItem('user', JSON.stringify(response.user));
       localStorage.setItem('token', response.token);
-      
-      // Clear saved form data after successful login
-      clearSavedData();
 
       setTimeout(() => {
         const userRole = response.user?.role;
         if (userRole === 'admin') navigate('/admin');
         else if (userRole === 'volunteer') navigate('/volunteer');
+        else if (userRole === 'ngo') navigate('/ngo'); // Fixed: lowercase 'ngo'
         else navigate('/');
       }, 1500);
 
@@ -248,9 +212,6 @@ export default function AuthPage() {
       setSuccess("Account verified! Redirecting...");
       localStorage.setItem("user", JSON.stringify(response.user));
       localStorage.setItem("token", response.token);
-      
-      // Clear saved form data after successful registration
-      clearSavedData();
 
       setTimeout(() => {
         const userRole = response.user?.role;
@@ -327,28 +288,6 @@ export default function AuthPage() {
             <button onClick={() => { setIsLogin(true); setIsOtpStep(false); navigate('/login'); }} className={`w-1/2 p-2 rounded-md font-semibold transition-all ${isLogin ? 'bg-white shadow-md text-[#4f685b] font-bold' : 'text-gray-600'}`}>Login</button>
             <button onClick={() => { setIsLogin(false); setIsOtpStep(false); navigate('/register'); }} className={`w-1/2 p-2 rounded-md font-semibold transition-all ${!isLogin ? 'bg-white shadow-md text-[#4f685b] font-bold' : 'text-gray-600'}`}>Register</button>
           </div>
-          {/* <div className="text-center mt-2">
-            <button 
-              onClick={() => {
-                clearSavedData();
-                setLoginData({ email: '', password: '' });
-                setRegisterData({
-                  name: '',
-                  email: '',
-                  password: '',
-                  confirmPassword: '',
-                  role: 'volunteer',
-                  skills: [],
-                  location: '',
-                  bio: ''
-                });
-                toast.success('Form data cleared');
-              }}
-              className="text-xs text-gray-500 hover:text-red-500 transition-colors duration-200"
-            >
-              Clear Form Data
-            </button>
-          </div> */}
         </div>
         <div className="flex-1 overflow-y-auto px-4 lg:px-6 scrollbar-hide">
           <div className="max-w-lg mx-auto w-full py-4">

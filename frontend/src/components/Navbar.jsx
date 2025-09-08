@@ -30,16 +30,16 @@ const Navbar = () => {
     // Clear localStorage
     localStorage.removeItem('user');
     localStorage.removeItem('token');
-    
+
     // Show success message
     toast.success('Logged out successfully!');
-    
+
     // Redirect to login page and replace current history entry
     navigate('/login', { replace: true });
-    
+
     // Clear browser history to prevent back navigation to protected routes
     window.history.replaceState(null, '', '/login');
-    
+
     // Close dropdown
     setShowProfileDropdown(false);
   };
@@ -56,7 +56,7 @@ const Navbar = () => {
             <img src="./recycle.svg" alt="WasteZero Logo" className="size-11 rounded-full" />
             <span className="ml-2 text-xl font-semibold text-white">WasteZero</span>
           </div>
-          
+
           {/* center - navigation items */}
           {/* <div className='flex space-x-6'>
             {["Dashboard", "Opportunities", "Schedule Pickup", "Message", "My Profile"].map((key, index) => {
@@ -74,13 +74,13 @@ const Navbar = () => {
             </div>
             <div>
               <button>
-                <Bell className='text-white'/>
+                <Bell className='text-white' />
               </button>
             </div>
-            
+
             {/* Profile Dropdown */}
             <div className='relative z-50' ref={dropdownRef}>
-              <div 
+              <div
                 className='flex items-center gap-2 cursor-pointer hover:bg-[#588157] rounded-lg p-2 transition-colors duration-200'
                 onClick={handleProfileClick}
               >
@@ -103,26 +103,26 @@ const Navbar = () => {
                       {user.role || 'User'}
                     </span>
                   </div>
-                  
-                  <button 
+
+                  <button
                     className='w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200'
                     onClick={() => setShowProfileDropdown(false)}
                   >
                     <User className='w-4 h-4' />
                     My Profile
                   </button>
-                  
-                  <button 
+
+                  <button
                     className='w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200'
                     onClick={() => setShowProfileDropdown(false)}
                   >
                     <Settings className='w-4 h-4' />
                     Settings
                   </button>
-                  
+
                   <hr className='my-1' />
-                  
-                  <button 
+
+                  <button
                     className='w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200'
                     onClick={handleLogout}
                   >

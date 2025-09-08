@@ -1,10 +1,13 @@
 const express = require('express');
-const { login, register, logout } = require('../controllers/auth.controller');
-const { sendOtp, verifyOtp, resetPassword } = require('../controllers/reset.controller.js');
+const { login, register, logout, verifyRegistrationOtp } = require('../controllers/auth.controller');
+const { sendOtp, verifyOtp, resetPassword } =  require ("../controllers/reset.controller.js");
+
 
 const router = express.Router();
 
+// Registration & Login flow
 router.post('/register', register);
+router.post('/verify-user', verifyRegistrationOtp); // from auth.controller
 router.post('/login', login);
 router.post('/logout', logout);
 
