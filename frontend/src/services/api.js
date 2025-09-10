@@ -1,12 +1,12 @@
 import axios from 'axios';
+
 const api = axios.create({
-  baseURL: '/api', 
+  baseURL: 'http://localhost:4000/api', // Updated to point to backend server
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
-
 
 export const authAPI = {
   register: async (userData) => {
@@ -28,12 +28,11 @@ export const authAPI = {
     const response = await api.post('/auth/verify-user', data);
     return response.data;
   },  
-  
 
   // 🔹 Forgot Password Flow
   sendOtp: async (email) => {
-  const response = await api.post('/auth/send-otp', { email });
-  return response.data;
+    const response = await api.post('/auth/send-otp', { email });
+    return response.data;
   },
 
   verifyOtp: async (email, otp) => {
@@ -45,7 +44,6 @@ export const authAPI = {
     const response = await api.post('/auth/reset-password', { email, password });
     return response.data;
   },
-
 };
 
 // Admin API endpoints
@@ -143,6 +141,24 @@ export const adminAPI = {
   },
 };
 
+// Message API endpoints
+export const messageAPI = {
+  fetchAllUsers: async () => {
+    const response = await api.get('/users'); 
+    return response.data;
+  },
+
+  fetchMessages: async (otherUserId) => {
+    const response = await api.get(`/messages/${otherUserId}`);
+    return response.data;
+  },
+
+  postMessage: async (receiverId, message) => {
+    const response = await api.post(`/messages/send/${receiverId}`, { message });
+    return response.data;
+  },
+};
+
 // NGO API endpoints
 export const ngoAPI = {
   // Dashboard data
@@ -182,6 +198,12 @@ export const ngoAPI = {
     return response.data;
   },
 
+  // Review applications
+  reviewApplication: async (eventId, registrationId, reviewData) => {
+    const response = await api.post(`/ngo/events/${eventId}/registrations/${registrationId}/review`, reviewData);
+    return response.data;
+  },
+
   // Volunteer management (volunteers registered for NGO events)
   getMyVolunteers: async () => {
     const response = await api.get('/ngo/volunteers');
@@ -211,10 +233,82 @@ export const ngoAPI = {
   },
 };
 
-api.interceptors.response.use(
-  (response) => response,
+// Volunteer API endpoints
+export const volunteerAPI = {
+  // Dashboard data
+  getDashboardStats: async () => {
+    const response = await api.get('/volunteer/dashboard-stats');
+    return response.data;
+  },
+
+  // Opportunity browsing
+  getAllOpportunities: async (params = {}) => {
+    const response = await api.get('/volunteer/opportunities', { params });
+    return response.data;
+  },
+
+  getOpportunityDetails: async (opportunityId) => {
+    const response = await api.get(`/volunteer/opportunities/${opportunityId}`);
+    return response.data;
+  },
+
+  getRecommendedOpportunities: async () => {
+    const response = await api.get('/volunteer/opportunities/recommended');
+    return response.data;
+  },
+
+  // Application management
+  applyForOpportunity: async (opportunityId, applicationData = {}) => {
+    const response = await api.post(`/volunteer/opportunities/${opportunityId}/apply`, applicationData);
+    return response.data;
+  },
+
+  getMyApplications: async () => {
+    const response = await api.get('/volunteer/applications');
+    return response.data;
+  },
+
+  withdrawApplication: async (applicationId) => {
+    const response = await api.delete(`/volunteer/applications/${applicationId}`);
+    return response.data;
+  },
+
+  // Profile and notifications
+  updateProfile: async (profileData) => {
+    const response = await api.put('/volunteer/profile', profileData);
+    return response.data;
+  },
+
+  getNotifications: async () => {
+    const response = await api.get('/volunteer/notifications');
+    return response.data;
+  },
+};
+
+// --- Interceptors for Logging (from main branch) ---
+api.interceptors.request.use(
+  (config) => {
+    console.log('API Request:', config.method?.toUpperCase(), config.url);
+    return config;
+  },
   (error) => {
-    console.error('API Error:', error.response?.data || error.message);
+    console.error('API Request Error:', error);
+    return Promise.reject(error);
+  }
+);
+
+api.interceptors.response.use(
+  (response) => {
+    console.log('API Response:', response.status, response.config.url, response.data);
+    return response;
+  },
+  (error) => {
+    console.error('API Error:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
     return Promise.reject(error);
   }
 );

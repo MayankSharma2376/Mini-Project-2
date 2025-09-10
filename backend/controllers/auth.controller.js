@@ -1,6 +1,7 @@
 const User = require('../models/user.model');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+
 const dotenv = require('dotenv');
 dotenv.config();
 
@@ -26,6 +27,7 @@ const register = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ message: "User already registered" });
     }
+
 
     // Generate 4-digit OTP
     const otp = Math.floor(1000 + Math.random() * 9000).toString();

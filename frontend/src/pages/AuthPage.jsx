@@ -243,7 +243,7 @@ export default function AuthPage() {
     <div className="min-h-screen max-h-screen flex flex-col lg:flex-row overflow-hidden">
       {/* Left Panel: Branding and Features */}
       <div 
-        className="w-full lg:w-1/2 bg-cover bg-center relative max-h-screen overflow-hidden"
+        className="w-full lg:w-1/2 bg-cover bg-center relative hidden lg:block max-h-screen overflow-hidden"
         style={{ backgroundImage: 'linear-gradient(135deg, rgba(34, 139, 34, 0.85) 0%, rgba(0, 100, 0, 0.75) 50%, rgba(0, 0, 0, 0.6) 100%), url("./Waste.jpg")' }}
       >
         <div className="absolute inset-0 bg-gradient-to-br from-green-800/60 via-green-900/40 to-black/70"></div>

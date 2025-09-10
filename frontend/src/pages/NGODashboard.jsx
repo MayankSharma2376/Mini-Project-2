@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, memo } from 'react'
 import {
   Users,
   Calendar,
@@ -19,10 +19,147 @@ import {
   Award,
   Target,
   Activity,
-  BarChart3
+  BarChart3,
+  CheckCircle,
+  XCircle
 } from 'lucide-react'
 import { ngoAPI } from '../services/api'
 import { toast } from 'react-toastify'
+
+// Extracted CreateEventModal component to prevent re-renders
+const CreateEventModal = memo(({ 
+  showModal, 
+  setShowModal, 
+  newEvent, 
+  handleNewEventChange, 
+  handleCreateEvent, 
+  loading 
+}) => {
+  if (!showModal) return null;
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl max-w-md w-full max-h-90vh overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">Create New Event</h3>
+            <button
+              onClick={() => setShowModal(false)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Event Title *
+              </label>
+              <input
+                type="text"
+                value={newEvent.title}
+                onChange={(e) => handleNewEventChange('title', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter event title"
+                autoComplete="off"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description *
+              </label>
+              <textarea
+                value={newEvent.description}
+                onChange={(e) => handleNewEventChange('description', e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Describe the event"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Location *
+              </label>
+              <input
+                type="text"
+                value={newEvent.location}
+                onChange={(e) => handleNewEventChange('location', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Event location"
+                autoComplete="off"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Date *
+              </label>
+              <input
+                type="date"
+                value={newEvent.date}
+                onChange={(e) => handleNewEventChange('date', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                min={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Capacity *
+              </label>
+              <input
+                type="number"
+                value={newEvent.capacity}
+                onChange={(e) => handleNewEventChange('capacity', e.target.value)}
+                min="1"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Maximum participants"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Category
+              </label>
+              <select
+                value={newEvent.category}
+                onChange={(e) => handleNewEventChange('category', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="environmental">Environmental</option>
+                <option value="social">Social</option>
+                <option value="education">Education</option>
+                <option value="health">Health</option>
+                <option value="community">Community</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
+            <button
+              onClick={() => setShowModal(false)}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleCreateEvent}
+              disabled={loading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {loading ? 'Creating...' : 'Create Event'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+CreateEventModal.displayName = 'CreateEventModal';
 
 const NGODashboard = () => {
   const [loading, setLoading] = useState(false)
@@ -89,8 +226,16 @@ const NGODashboard = () => {
     location: '',
     date: '',
     capacity: '',
-    category: 'Environmental'
+    category: 'environmental'
   })
+
+  // Handle input changes for new event
+  const handleNewEventChange = useCallback((field, value) => {
+    setNewEvent(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  }, []);
 
   // Volunteer Management State (volunteers registered for NGO events)
   const [volunteers, setVolunteers] = useState([
@@ -133,74 +278,170 @@ const NGODashboard = () => {
   const [stats, setStats] = useState([
     {
       title: 'Active Events',
-      value: '3',
-      change: '+2',
+      value: '0',
+      change: '+0',
       icon: Calendar,
       color: 'bg-blue-500'
     },
     {
       title: 'Total Volunteers',
-      value: '68',
-      change: '+12',
+      value: '0',
+      change: '+0',
       icon: Users,
       color: 'bg-green-500'
     },
     {
       title: 'Total Impact Hours',
-      value: '340',
-      change: '+45',
+      value: '0',
+      change: '+0',
       icon: Clock,
       color: 'bg-purple-500'
     },
     {
       title: 'Events Completed',
-      value: '15',
-      change: '+3',
+      value: '0',
+      change: '+0',
       icon: Award,
       color: 'bg-orange-500'
     }
-  ])
+  ]);
+
+  // Load dashboard data
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      console.log('Loading dashboard data...');
+      
+      const [statsResponse, eventsResponse] = await Promise.all([
+        ngoAPI.getDashboardStats(),
+        ngoAPI.getMyEvents()
+      ]);
+
+      console.log('Stats response:', statsResponse);
+      console.log('Events response:', eventsResponse);
+
+      // Extract data from API response
+      const statsData = statsResponse.data || statsResponse;
+      const eventsData = eventsResponse.data || eventsResponse;
+
+      console.log('Processed stats data:', statsData);
+      console.log('Processed events data:', eventsData);
+
+      setStats([
+        {
+          title: 'Active Events',
+          value: statsData.activeEvents || '0',
+          change: '+2',
+          icon: Calendar,
+          color: 'bg-blue-500'
+        },
+        {
+          title: 'Total Volunteers',
+          value: statsData.totalVolunteers || '0',
+          change: '+12',
+          icon: Users,
+          color: 'bg-green-500'
+        },
+        {
+          title: 'Total Impact Hours',
+          value: statsData.totalHours || statsData.totalImpactHours || '0',
+          change: '+45',
+          icon: Clock,
+          color: 'bg-purple-500'
+        },
+        {
+          title: 'Events Completed',
+          value: statsData.completedEvents || statsData.eventsCompleted || '0',
+          change: '+3',
+          icon: Award,
+          color: 'bg-orange-500'
+        }
+      ]);
+      setEvents(eventsData);
+      console.log('Dashboard data loaded successfully');
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      toast.error(`Failed to load dashboard data: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Create new event
   const handleCreateEvent = async () => {
+    console.log('Create event called with:', newEvent); // Debug log
+    
     if (!newEvent.title || !newEvent.description || !newEvent.location || 
         !newEvent.date || !newEvent.capacity) {
+      console.log('Validation failed:', {
+        title: newEvent.title,
+        description: newEvent.description,
+        location: newEvent.location,
+        date: newEvent.date,
+        capacity: newEvent.capacity
+      }); // Debug log
       toast.error('Please fill in all required fields')
       return
     }
 
     try {
       setLoading(true)
-      // In real app, this would be an API call
-      // const response = await ngoAPI.createEvent(newEvent)
-      
-      const eventToAdd = {
-        id: events.length + 1,
+      const eventData = {
         ...newEvent,
-        capacity: parseInt(newEvent.capacity),
-        registered: 0,
-        status: 'active',
-        createdBy: 'Green Earth NGO' // This would come from user context
-      }
+        capacity: parseInt(newEvent.capacity)
+      };
       
-      setEvents([...events, eventToAdd])
+      console.log('Sending event data:', eventData); // Debug log
+      const response = await ngoAPI.createEvent(eventData);
+      console.log('Event creation response:', response); // Debug log
+      
       setNewEvent({
         title: '',
         description: '',
         location: '',
         date: '',
         capacity: '',
-        category: 'Environmental'
+        category: 'environmental'
       })
       setShowCreateEventModal(false)
       toast.success('Event created successfully!')
+      loadDashboardData(); // Refresh data
     } catch (error) {
-      toast.error('Failed to create event')
-      console.error('Error creating event:', error)
+      console.error('Error creating event:', error);
+      toast.error(error.response?.data?.message || 'Failed to create event');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  // Handle application review
+  const handleReviewApplication = async (eventId, applicationId, status, reviewNote = '') => {
+    try {
+      await ngoAPI.reviewApplication(eventId, applicationId, { status, reviewNote });
+      toast.success(`Application ${status} successfully!`);
+      // Refresh data after review
+      loadDashboardData();
+    } catch (error) {
+      console.error('Error reviewing application:', error);
+      toast.error('Failed to review application');
+    }
+  };
+  //   } catch (error) {
+  //     toast.error('Failed to create event')
+  //     console.error('Error creating event:', error)
+  //   } finally {
+  //     setLoading(false)
+  //   }
+  // }
 
   // Handle event status update
   const updateEventStatus = async (eventId, newStatus) => {
@@ -456,126 +697,6 @@ const NGODashboard = () => {
     </div>
   )
 
-  // Create Event Modal
-  const CreateEventModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-md w-full max-h-90vh overflow-y-auto">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-semibold text-gray-800">Create New Event</h3>
-            <button
-              onClick={() => setShowCreateEventModal(false)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Event Title *
-              </label>
-              <input
-                type="text"
-                value={newEvent.title}
-                onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter event title"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description *
-              </label>
-              <textarea
-                value={newEvent.description}
-                onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Describe the event"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Location *
-              </label>
-              <input
-                type="text"
-                value={newEvent.location}
-                onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Event location"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Date *
-              </label>
-              <input
-                type="date"
-                value={newEvent.date}
-                onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                min={new Date().toISOString().split('T')[0]}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Capacity *
-              </label>
-              <input
-                type="number"
-                value={newEvent.capacity}
-                onChange={(e) => setNewEvent({...newEvent, capacity: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Maximum participants"
-                min="1"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category
-              </label>
-              <select
-                value={newEvent.category}
-                onChange={(e) => setNewEvent({...newEvent, category: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="Environmental">Environmental</option>
-                <option value="Education">Education</option>
-                <option value="Community">Community</option>
-                <option value="Health">Health</option>
-                <option value="Technology">Technology</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="flex gap-3 mt-6">
-            <button
-              onClick={() => setShowCreateEventModal(false)}
-              className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleCreateEvent}
-              disabled={loading}
-              className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Creating...' : 'Create Event'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Clean Header */}
@@ -648,7 +769,14 @@ const NGODashboard = () => {
       </div>
 
       {/* Modals */}
-      {showCreateEventModal && <CreateEventModal />}
+      <CreateEventModal 
+        showModal={showCreateEventModal}
+        setShowModal={setShowCreateEventModal}
+        newEvent={newEvent}
+        handleNewEventChange={handleNewEventChange}
+        handleCreateEvent={handleCreateEvent}
+        loading={loading}
+      />
     </div>
   )
 }

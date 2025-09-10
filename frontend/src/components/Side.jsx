@@ -1,16 +1,17 @@
+import { Link, useLocation } from 'react-router-dom';
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { 
-  LayoutDashboard, 
-  Leaf, 
-  Calendar, 
-  MessageCircle, 
-  User, 
+import {
+  LayoutDashboard,
+  Leaf,
+  Calendar,
+  MessageCircle,
+  User,
   Settings,
   LogOut,
   HelpCircle
-} from 'lucide-react'
+} from 'lucide-react';
 
 const Side = () => {
   const navigate = useNavigate();
@@ -19,69 +20,81 @@ const Side = () => {
     // Clear localStorage
     localStorage.removeItem('user');
     localStorage.removeItem('token');
-    
+
     // Show success message
     toast.success('Logged out successfully!');
-    
+
     // Redirect to login page and replace current history entry
     navigate('/login', { replace: true });
-    
+
     // Clear browser history to prevent back navigation to protected routes
     window.history.replaceState(null, '', '/login');
   };
-
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', active: true },
-    { icon: Leaf, label: 'Eco Opportunities', active: false },
-    { icon: Calendar, label: 'Pickup Schedule', active: false },
-    { icon: MessageCircle, label: 'Messages', active: false },
-    { icon: User, label: 'My Profile', active: false },
-    { icon: Settings, label: 'Settings', active: false },
-    { icon: HelpCircle, label: 'Help & Support', active: false },
-  ]
+    { icon: LayoutDashboard, label: 'Dashboard', path: 'dashboard' },
+    { icon: Leaf, label: 'Eco Opportunities', path: 'eco-opportunities' },
+    { icon: Calendar, label: 'Pickup Schedule', path: 'pickup-schedule' },
+    { icon: MessageCircle, label: 'Messages', path: 'message' },
+    { icon: User, label: 'My Profile', path: 'profile' },
+    { icon: Settings, label: 'Settings', path: 'settings' },
+    { icon: HelpCircle, label: 'Help & Support', path: 'help' },
+  ];
+
+  const location = useLocation();
+  // Get the base path (e.g., "admin" or "volunteer") from the current URL
+  const basePath = location.pathname.split('/')[1];
 
   return (
     <aside className="hidden lg:flex fixed left-0 top-0 w-64 h-screen bg-[#344e41] border-r border-[#588157] shadow-lg flex-col z-30">
 
+
       {/* Spacer for navbar */}
       <div className="h-16 bg-[#344e41]"></div>
-      
+
       {/* Navigation Menu */}
       <nav className="p-4 flex-1 overflow-y-auto">
         <ul className="space-y-2">
           {menuItems.map((item, index) => {
-            const IconComponent = item.icon
+            const IconComponent = item.icon;
+            // Construct the full path dynamically
+            const fullPath = `/${basePath}/${item.path}`;
+
+            // Check if the current URL matches the link's path.
+            // Also handles the index route (e.g., /volunteer showing Dashboard as active).
+            const isActive = location.pathname === fullPath ||
+              (item.path === 'dashboard' && location.pathname === `/${basePath}`);
+
             return (
               <li key={index}>
-                <p
-                  href="#"
-                  className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 group cursor-pointer ${
-                    item.active
+                <Link
+                  to={fullPath} // Use the dynamically created full path
+                  className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 group cursor-pointer ${isActive
                       ? 'bg-[#588157] text-white shadow-md'
                       : 'text-[#dad7cd] hover:bg-[#588157] hover:text-white'
-                  }`}
+                    }`}
                 >
                   <IconComponent className="w-5 h-5" />
                   <span className="font-medium">{item.label}</span>
-                </p>
+                </Link>
               </li>
-            )
+            );
           })}
         </ul>
       </nav>
 
-      {/* Logout Button - Fixed at bottom */}
       <div className="p-4">
-        <button 
-          onClick={handleLogout}
-          className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-white bg-red-500 hover:bg-red-600 transition-all duration-200 group cursor-pointer"
-        >
-          <LogOut className="w-5 h-5" />
-          <span className="font-medium">Logout</span>
-        </button>
+        {/* <button className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-white bg-red-500 hover:bg-red-600 transition-all duration-200 group cursor-pointer"> */}
+
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-white bg-red-500 hover:bg-red-600 transition-all duration-200 group cursor-pointer"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Logout</span>
+          </button>
       </div>
     </aside>
-  )
-}
+  );
+};
 
-export default Side
+export default Side;

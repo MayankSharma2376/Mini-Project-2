@@ -1,6 +1,7 @@
 // routes/ngo.routes.js
 const express = require('express');
 const router = express.Router();
+
 const {
   getDashboardStats,
   getRecentActivities,
@@ -9,6 +10,7 @@ const {
   updateEvent,
   deleteEvent,
   getEventRegistrations,
+  reviewApplication, // Kept from 'main' branch
   getMyVolunteers,
   getVolunteerDetails,
   sendMessageToVolunteer,
@@ -26,18 +28,24 @@ const requireNGO = (req, res, next) => {
     name: 'Green Earth NGO'
   };
   
-  if (req.user.role !== 'ngo') {
-    return res.status(403).json({
-      success: false,
-      message: 'Access denied. NGO role required.'
-    });
-  }
+  // Temporarily disable role check for testing (kept from 'main' branch)
+  // if (req.user.role !== 'ngo') {
+  //   return res.status(403).json({
+  //     success: false,
+  //     message: 'Access denied. NGO role required.'
+  //   });
+  // }
   
   next();
 };
 
 // Apply NGO role check to all routes
 router.use(requireNGO);
+
+// Test route to verify server is working (kept from 'main' branch)
+router.get('/test', (req, res) => {
+  res.json({ success: true, message: 'NGO routes working', user: req.user });
+});
 
 // Dashboard routes
 router.get('/dashboard/stats', getDashboardStats);
@@ -49,6 +57,8 @@ router.post('/events', createEvent);
 router.put('/events/:eventId', updateEvent);
 router.delete('/events/:eventId', deleteEvent);
 router.get('/events/:eventId/registrations', getEventRegistrations);
+// Added the review application route from the 'main' branch
+router.post('/events/:eventId/registrations/:registrationId/review', reviewApplication);
 
 // Volunteer management routes
 router.get('/volunteers', getMyVolunteers);

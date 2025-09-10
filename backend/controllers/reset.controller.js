@@ -1,8 +1,7 @@
 // controllers/reset.controller.js
-const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 const User = require('../models/user.model');
-const dotenv = require('dotenv')
+const dotenv = require('dotenv');
 dotenv.config();
 
 // Nodemailer setup
@@ -61,31 +60,26 @@ const sendOtp = async (req, res) => {
           <div style="font-family: Arial, sans-serif; background: #f9fafb; padding: 30px; text-align: center;">
             <div style="max-width: 500px; margin: auto; background: #ffffff; border-radius: 12px; padding: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
               
-              <!-- Logo -->
               <div style="margin-bottom: 20px;">
                 <div style="font-size: 50px;">♻️</div>
                 <h2 style="margin: 10px 0; color: #2f855a; font-size: 24px; font-weight: bold;">WasteZero</h2>
               </div>
 
-              <!-- Title -->
               <h3 style="color: #111827; font-size: 20px; margin-bottom: 10px;">Password Reset Request</h3>
               <p style="color: #374151; font-size: 14px; margin-bottom: 25px;">
                 We received a request to reset your WasteZero account password. 
                 Please use the OTP below to continue. It is valid for the next <b>5 minutes</b>.
               </p>
 
-              <!-- OTP Box -->
               <div style="background: #ecfdf5; color: #065f46; font-size: 24px; font-weight: bold; padding: 15px; border-radius: 8px; letter-spacing: 6px; margin-bottom: 25px;">
                 ${otp}
               </div>
 
-              <!-- Instructions -->
               <p style="color: #374151; font-size: 14px; margin-bottom: 20px;">
                 If you didn't request this, you can safely ignore this email. 
                 Your account remains secure.
               </p>
 
-              <!-- Footer -->
               <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 25px 0;" />
               <p style="font-size: 12px; color: #6b7280;">
                 ♻️ Thank you for being part of the <b>WasteZero</b> movement. Together, we're making cities greaner and cleaner.

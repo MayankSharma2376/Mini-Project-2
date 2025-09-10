@@ -47,6 +47,19 @@ const Navbar = () => {
   const handleProfileClick = () => {
     setShowProfileDropdown(!showProfileDropdown);
   };
+
+  const handleNotificationClick = () => {
+    // Navigate to notifications page based on user role
+    const userRole = user.role || 'volunteer'; // Default to volunteer if no role
+    if (userRole === 'admin') {
+      navigate('/admin/notifications');
+    } else if (userRole === 'ngo') {
+      navigate('/ngo/notifications');
+    } else {
+      navigate('/volunteer/notifications');
+    }
+  };
+  
   return (
     <>
       <nav className='fixed top-0 left-0 right-0 h-16 z-[100] bg-[#344e41] w-full'>
@@ -54,7 +67,7 @@ const Navbar = () => {
           {/* left panel - logo */}
           <div className='flex items-center'>
             <img src="./recycle.svg" alt="WasteZero Logo" className="size-11 rounded-full" />
-            <span className="ml-2 text-xl font-semibold text-white">WasteZero</span>
+            <span className="ml-2 text-xl hidden md:block font-semibold text-white">WasteZero</span>
           </div>
 
           {/* center - navigation items */}
@@ -73,8 +86,11 @@ const Navbar = () => {
               <input type="text" placeholder="Search opportunities..." className="outline-none bg-transparent flex-1 text-gray-700 placeholder-gray-400" />
             </div>
             <div>
-              <button>
-                <Bell className='text-white' />
+              <button 
+                onClick={handleNotificationClick}
+                className="p-2 hover:bg-[#588157] rounded-lg transition-colors duration-200"
+              >
+                <Bell className='text-white size-5' />
               </button>
             </div>
 

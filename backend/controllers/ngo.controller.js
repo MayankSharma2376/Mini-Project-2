@@ -1,17 +1,41 @@
 // controllers/ngo.controller.js
 const User = require('../models/user.model');
+const Opportunity = require('../models/opportunity.model');
+const Application = require('../models/application.model');
 
 // Get NGO Dashboard Stats
 const getDashboardStats = async (req, res) => {
   try {
-    // In a real app, you'd calculate these stats from your database
-    // For now, return mock data
+    console.log('getDashboardStats called'); // Debug log
+    const ngoId = req.user.id;
+    
+    // Get real stats from database
+    const [activeEvents, completedEvents, totalVolunteers, totalApplications] = await Promise.all([
+      Opportunity.countDocuments({ createdBy: ngoId, status: 'active' }),
+      Opportunity.countDocuments({ createdBy: ngoId, status: 'completed' }),
+      Application.distinct('volunteerId', { 
+        status: 'accepted',
+        opportunityId: { $in: await Opportunity.find({ createdBy: ngoId }).select('_id') }
+      }).then(volunteers => volunteers.length),
+      Application.countDocuments({
+        opportunityId: { $in: await Opportunity.find({ createdBy: ngoId }).select('_id') },
+        status: 'accepted'
+      })
+    ]);
+
+    // Calculate total impact hours (assuming 4 hours per volunteer per event)
+    const totalImpactHours = totalApplications * 4;
+
     const stats = {
-      activeEvents: 3,
-      totalVolunteers: 68,
-      totalImpactHours: 340,
-      eventsCompleted: 15
+      activeEvents,
+      totalVolunteers,
+      totalImpactHours,
+      totalHours: totalImpactHours, // Frontend looks for both
+      eventsCompleted: completedEvents,
+      completedEvents
     };
+
+    console.log('Returning stats:', stats); // Debug log
 
     res.json({
       success: true,
@@ -21,7 +45,8 @@ const getDashboardStats = async (req, res) => {
     console.error('Error fetching NGO dashboard stats:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch dashboard statistics'
+      message: 'Failed to fetch dashboard statistics',
+      error: error.message
     });
   }
 };
@@ -70,58 +95,26 @@ const getRecentActivities = async (req, res) => {
 // Get NGO's Events
 const getMyEvents = async (req, res) => {
   try {
-    // In a real app, filter events by NGO ID
-    const ngoId = req.user.id; // From auth middleware
+    console.log('getMyEvents called'); // Debug log
+    const ngoId = req.user.id;
     
-    // Mock events data - in real app, query from database
-    const events = [
-      {
-        id: 1,
-        title: 'Community Garden Project',
-        description: 'Create sustainable community gardens in urban areas',
-        location: 'Green Valley Community Center',
-        date: '2025-09-20',
-        capacity: 30,
-        registered: 15,
-        status: 'active',
-        category: 'Environmental',
-        createdBy: ngoId
-      },
-      {
-        id: 2,
-        title: 'Recycling Awareness Workshop',
-        description: 'Educational workshop on proper recycling practices',
-        location: 'Community Library',
-        date: '2025-09-25',
-        capacity: 25,
-        registered: 18,
-        status: 'active',
-        category: 'Education',
-        createdBy: ngoId
-      },
-      {
-        id: 3,
-        title: 'River Cleanup Drive',
-        description: 'Clean the local river and restore its natural beauty',
-        location: 'Riverside Park',
-        date: '2025-09-30',
-        capacity: 50,
-        registered: 35,
-        status: 'active',
-        category: 'Environmental',
-        createdBy: ngoId
-      }
-    ];
+    // Query database for actual events created by this NGO
+    const opportunities = await Opportunity.find({ createdBy: ngoId })
+      .sort({ createdAt: -1 })
+      .populate('createdBy', 'name email');
+
+    console.log('Returning real events:', opportunities.length); // Debug log
 
     res.json({
       success: true,
-      data: events
+      data: opportunities
     });
   } catch (error) {
     console.error('Error fetching NGO events:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch events'
+      message: 'Failed to fetch events',
+      error: error.message
     });
   }
 };
@@ -129,14 +122,16 @@ const getMyEvents = async (req, res) => {
 // Create New Event
 const createEvent = async (req, res) => {
   try {
-    const { title, description, location, date, capacity, category } = req.body;
+    console.log('Creating event with data:', req.body); // Debug log
+    const { title, description, location, date, capacity, category, duration, requiredSkills, applicationDeadline } = req.body;
     const ngoId = req.user.id;
 
-    // Validation
+    // Validation - Fixed to match frontend fields
     if (!title || !description || !location || !date || !capacity) {
+      console.log('Validation failed, missing fields:', { title: !!title, description: !!description, location: !!location, date: !!date, capacity: !!capacity });
       return res.status(400).json({
         success: false,
-        message: 'All fields are required'
+        message: 'All required fields (title, description, location, date, capacity) must be provided'
       });
     }
 
@@ -147,32 +142,57 @@ const createEvent = async (req, res) => {
       });
     }
 
-    // In a real app, save to database
-    // For now, return mock success response
-    const newEvent = {
-      id: Date.now(), // Mock ID
-      title,
-      description,
-      location,
-      date,
+    if (capacity < 1) {
+      return res.status(400).json({
+        success: false,
+        message: 'Capacity must be at least 1'
+      });
+    }
+
+    // Create new opportunity in database
+    const newOpportunity = new Opportunity({
+      title: title.trim(),
+      description: description.trim(),
+      location: location.trim(),
+      date: new Date(date),
       capacity: parseInt(capacity),
-      registered: 0,
-      status: 'active',
       category: category || 'Environmental',
+      duration: duration || '4 hours', // Default duration if not provided
+      requiredSkills: requiredSkills || [],
+      applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null,
       createdBy: ngoId,
-      createdAt: new Date()
-    };
+      registeredCount: 0,
+      status: 'active'
+    });
+
+    const savedOpportunity = await newOpportunity.save();
+    await savedOpportunity.populate('createdBy', 'name email');
+
+    console.log('Event saved to database:', savedOpportunity._id); // Debug log
 
     res.status(201).json({
       success: true,
       message: 'Event created successfully',
-      data: newEvent
+      data: savedOpportunity
     });
   } catch (error) {
     console.error('Error creating event:', error);
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        details: Object.keys(error.errors).map(key => ({
+          field: key,
+          message: error.errors[key].message
+        }))
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Failed to create event'
+      message: 'Failed to create event',
+      error: error.message
     });
   }
 };
@@ -181,34 +201,72 @@ const createEvent = async (req, res) => {
 const updateEvent = async (req, res) => {
   try {
     const { eventId } = req.params;
-    const { title, description, location, date, capacity, category, status } = req.body;
+    const { title, description, location, date, capacity, category, status, duration, requiredSkills, applicationDeadline } = req.body;
     const ngoId = req.user.id;
 
-    // In a real app, check if event belongs to this NGO and update in database
-    // For now, return mock success response
-    const updatedEvent = {
-      id: eventId,
-      title: title || 'Updated Event Title',
-      description: description || 'Updated description',
-      location: location || 'Updated location',
-      date: date || '2025-09-25',
-      capacity: capacity ? parseInt(capacity) : 30,
-      status: status || 'active',
-      category: category || 'Environmental',
-      createdBy: ngoId,
-      updatedAt: new Date()
-    };
+    // Find and verify ownership
+    const opportunity = await Opportunity.findOne({ _id: eventId, createdBy: ngoId });
+    
+    if (!opportunity) {
+      return res.status(404).json({
+        success: false,
+        message: 'Opportunity not found or you do not have permission to update it'
+      });
+    }
+
+    // Update fields if provided
+    if (title) opportunity.title = title.trim();
+    if (description) opportunity.description = description.trim();
+    if (location) opportunity.location = location.trim();
+    if (date) {
+      if (new Date(date) < new Date()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Event date cannot be in the past'
+        });
+      }
+      opportunity.date = new Date(date);
+    }
+    if (capacity) {
+      const newCapacity = parseInt(capacity);
+      if (newCapacity < opportunity.registeredCount) {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot reduce capacity below current registrations (${opportunity.registeredCount})`
+        });
+      }
+      opportunity.capacity = newCapacity;
+    }
+    if (category) opportunity.category = category;
+    if (status) opportunity.status = status;
+    if (duration) opportunity.duration = duration.trim();
+    if (requiredSkills !== undefined) opportunity.requiredSkills = requiredSkills;
+    if (applicationDeadline !== undefined) {
+      opportunity.applicationDeadline = applicationDeadline ? new Date(applicationDeadline) : null;
+    }
+
+    const updatedOpportunity = await opportunity.save();
+    await updatedOpportunity.populate('createdBy', 'name email');
 
     res.json({
       success: true,
-      message: 'Event updated successfully',
-      data: updatedEvent
+      message: 'Opportunity updated successfully',
+      data: updatedOpportunity
     });
   } catch (error) {
     console.error('Error updating event:', error);
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        details: error.message
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Failed to update event'
+      message: 'Failed to update opportunity'
     });
   }
 };
@@ -219,8 +277,22 @@ const deleteEvent = async (req, res) => {
     const { eventId } = req.params;
     const ngoId = req.user.id;
 
-    // In a real app, check if event belongs to this NGO and delete from database
-    // For now, return mock success response
+    // Find and verify ownership
+    const opportunity = await Opportunity.findOne({ _id: eventId, createdBy: ngoId });
+    
+    if (!opportunity) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found or you do not have permission to delete it'
+      });
+    }
+
+    // Delete associated applications first
+    await Application.deleteMany({ opportunityId: eventId });
+    
+    // Delete the opportunity
+    await Opportunity.findByIdAndDelete(eventId);
+
     res.json({
       success: true,
       message: 'Event deleted successfully'
@@ -240,36 +312,23 @@ const getEventRegistrations = async (req, res) => {
     const { eventId } = req.params;
     const ngoId = req.user.id;
 
-    // In a real app, fetch registrations for this specific event
-    // Mock registrations data
-    const registrations = [
-      {
-        id: 1,
-        volunteer: {
-          id: 1,
-          name: 'Alice Johnson',
-          email: 'alice.johnson@email.com',
-          phone: '+1 234-567-8901'
-        },
-        registeredAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-        status: 'confirmed'
-      },
-      {
-        id: 2,
-        volunteer: {
-          id: 2,
-          name: 'Robert Chen',
-          email: 'robert.chen@email.com',
-          phone: '+1 234-567-8902'
-        },
-        registeredAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-        status: 'confirmed'
-      }
-    ];
+    // Verify opportunity belongs to this NGO
+    const opportunity = await Opportunity.findOne({ _id: eventId, createdBy: ngoId });
+    if (!opportunity) {
+      return res.status(404).json({
+        success: false,
+        message: 'Opportunity not found or you do not have permission to view it'
+      });
+    }
+
+    // Fetch applications for this opportunity
+    const applications = await Application.find({ opportunityId: eventId })
+      .populate('volunteerId', 'name email phone skills location bio')
+      .sort({ appliedAt: -1 });
 
     res.json({
       success: true,
-      data: registrations
+      data: applications
     });
   } catch (error) {
     console.error('Error fetching event registrations:', error);
@@ -285,43 +344,47 @@ const getMyVolunteers = async (req, res) => {
   try {
     const ngoId = req.user.id;
 
-    // In a real app, fetch volunteers registered for this NGO's events
-    // Mock volunteers data
-    const volunteers = [
-      {
-        id: 1,
-        name: 'Alice Johnson',
-        email: 'alice.johnson@email.com',
-        phone: '+1 234-567-8901',
-        skills: ['Environmental Advocacy', 'Event Planning'],
-        registeredEvents: ['Community Garden Project', 'River Cleanup Drive'],
-        totalHours: 25,
-        status: 'active',
-        joinDate: '2024-08-15'
-      },
-      {
-        id: 2,
-        name: 'Robert Chen',
-        email: 'robert.chen@email.com',
-        phone: '+1 234-567-8902',
-        skills: ['Education', 'Public Speaking'],
-        registeredEvents: ['Recycling Awareness Workshop'],
-        totalHours: 12,
-        status: 'active',
-        joinDate: '2024-09-01'
-      },
-      {
-        id: 3,
-        name: 'Maria Garcia',
-        email: 'maria.garcia@email.com',
-        phone: '+1 234-567-8903',
-        skills: ['Community Outreach', 'Social Media'],
-        registeredEvents: ['Community Garden Project', 'Recycling Awareness Workshop'],
-        totalHours: 18,
-        status: 'active',
-        joinDate: '2024-07-20'
+    // Get all opportunities created by this NGO
+    const myOpportunities = await Opportunity.find({ createdBy: ngoId }).select('_id title');
+    const opportunityIds = myOpportunities.map(opp => opp._id);
+
+    // Find all accepted applications for NGO's opportunities
+    const acceptedApplications = await Application.find({ 
+      opportunityId: { $in: opportunityIds }, 
+      status: 'accepted' 
+    })
+    .populate('volunteerId', 'name email phone skills location bio createdAt')
+    .populate('opportunityId', 'title')
+    .sort({ appliedAt: -1 });
+
+    // Group applications by volunteer to get unique volunteers with their registered events
+    const volunteerMap = new Map();
+    
+    acceptedApplications.forEach(app => {
+      const volunteerId = app.volunteerId._id.toString();
+      
+      if (!volunteerMap.has(volunteerId)) {
+        volunteerMap.set(volunteerId, {
+          id: volunteerId,
+          name: app.volunteerId.name,
+          email: app.volunteerId.email,
+          phone: app.volunteerId.phone || 'Not provided',
+          skills: app.volunteerId.skills || [],
+          location: app.volunteerId.location || 'Not specified',
+          bio: app.volunteerId.bio || '',
+          registeredEvents: [],
+          totalHours: 0, // This could be calculated based on event duration
+          status: 'active',
+          joinDate: app.volunteerId.createdAt || new Date()
+        });
       }
-    ];
+      
+      const volunteer = volunteerMap.get(volunteerId);
+      volunteer.registeredEvents.push(app.opportunityId.title);
+      volunteer.totalHours += 4; // Assuming 4 hours per event, adjust as needed
+    });
+
+    const volunteers = Array.from(volunteerMap.values());
 
     res.json({
       success: true,
@@ -488,6 +551,62 @@ const getVolunteerReport = async (req, res) => {
   }
 };
 
+// Review Application
+const reviewApplication = async (req, res) => {
+  try {
+    const { eventId, registrationId } = req.params;
+    const { status, reviewNote } = req.body;
+    const ngoId = req.user.id;
+
+    // Validate status
+    if (!['accepted', 'rejected'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status. Must be "accepted" or "rejected"'
+      });
+    }
+
+    // Find the application
+    const application = await Application.findById(registrationId)
+      .populate('opportunity')
+      .populate('volunteer');
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: 'Application not found'
+      });
+    }
+
+    // Check if the opportunity belongs to the NGO
+    if (application.opportunity.createdBy.toString() !== ngoId) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only review applications for your own opportunities'
+      });
+    }
+
+    // Update application status
+    application.status = status;
+    application.reviewNote = reviewNote;
+    application.reviewedAt = new Date();
+
+    await application.save();
+
+    res.json({
+      success: true,
+      message: `Application ${status} successfully`,
+      data: application
+    });
+  } catch (error) {
+    console.error('Error reviewing application:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to review application'
+    });
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getRecentActivities,
@@ -496,6 +615,7 @@ module.exports = {
   updateEvent,
   deleteEvent,
   getEventRegistrations,
+  reviewApplication,
   getMyVolunteers,
   getVolunteerDetails,
   sendMessageToVolunteer,

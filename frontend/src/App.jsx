@@ -7,11 +7,13 @@ import AuthPage from './pages/AuthPage'
 import AdminDashboard from './pages/AdminDashboard'
 import VolunteerDashboard from './pages/VolunteerDashboard'
 import NGODashboard from './pages/NGODashboard'
+import NotificationsPage from './pages/NotificationsPage'
 import AppFooter from './components/AppFooter';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Side';
 import Forgot_Password from './pages/Forgot_Password';
 import Homepage from './pages/Homepage';
+import MessagePage from './pages/MessagePage';
 
 function App() {
 
@@ -31,18 +33,23 @@ function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="message" element={<MessagePage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
           </Route>
 
           {/* Volunteer Routes */}
           <Route path="/volunteer" element={<VolunteerLayout />}>
             <Route index element={<VolunteerDashboard />} />
             <Route path="dashboard" element={<VolunteerDashboard />} />
+            <Route path="message" element={<MessagePage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
           </Route>
 
           {/* NGO Routes */}
           <Route path="/ngo" element={<NGOLayout />}>
             <Route index element={<NGODashboard />} />
             <Route path="dashboard" element={<NGODashboard />} />
+            <Route path="notifications" element={<NotificationsPage />} />
           </Route>
 
           {/* Catch all route - redirect to home */}
