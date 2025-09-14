@@ -2,6 +2,140 @@
 const User = require('../models/user.model');
 const Opportunity = require('../models/opportunity.model');
 const Application = require('../models/application.model');
+const { createApplicationReceivedNotification } = require('./notification.controller');
+// Added profile handlers
+ 
+// Get volunteer profile
+const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password -otp -otpExpires');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    res.json({ success: true, data: user });
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch profile' });
+  }
+};
+
+// Update volunteer profile
+const updateProfile = async (req, res) => {
+  try {
+  const { name, email, location, bio, skills, profileImage } = req.body;
+    const update = {};
+    if (name !== undefined) update.name = name;
+    if (email !== undefined) update.email = email;
+    if (location !== undefined) update.location = location;
+    if (bio !== undefined) update.bio = bio;
+  if (Array.isArray(skills)) update.skills = skills;
+  if (profileImage !== undefined) update.profileImage = profileImage; // accept base64 / URL
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { $set: update },
+      { new: true, runValidators: true }
+    ).select('-password -otp -otpExpires');
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.json({ success: true, data: user });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ success: false, message: 'Failed to update profile', error: error.message });
+  }
+};
+
+// --- Email Change Flow (OTP) ---
+const { sendOtpEmail } = require('../utils/mailer');
+let transporter;
+// Email handled via utils/mailer
+
+const initiateEmailChange = async (req, res) => {
+  try {
+    const { newEmail } = req.body;
+    if (!newEmail) return res.status(400).json({ success: false, message: 'New email required' });
+    const normalized = newEmail.toLowerCase();
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    // If same as current email -> no change
+    if (user.email === normalized) {
+      return res.json({ success: true, message: 'Email unchanged' });
+    }
+
+    // If another user already owns it
+    const existingOther = await User.findOne({ email: normalized, _id: { $ne: user._id } });
+    if (existingOther) {
+      return res.status(409).json({ success: false, message: 'Email already in use by another account' });
+    }
+
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    user.pendingEmail = normalized;
+    user.emailChangeOtp = otp;
+    user.emailChangeOtpExpires = Date.now() + 5 * 60 * 1000;
+    await user.save();
+    console.log(`[email-change] OTP ${otp} generated for user ${user._id} -> ${normalized}`);
+  await sendOtpEmail(newEmail, otp, { title: 'Confirm Your New Email', subject: 'Verify your new WasteZero email', variant: 'email-change' });
+    res.json({ success: true, message: 'OTP sent to new email' });
+  } catch (error) {
+    console.error('Error initiating email change:', error);
+    res.status(500).json({ success: false, message: 'Failed to initiate email change' });
+  }
+};
+
+const verifyEmailChange = async (req, res) => {
+  try {
+    const { otp } = req.body;
+    if (!otp) return res.status(400).json({ success: false, message: 'OTP required' });
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (!user.pendingEmail || !user.emailChangeOtp) {
+      return res.status(400).json({ success: false, message: 'No pending email change' });
+    }
+    if (user.emailChangeOtpExpires < Date.now()) {
+      user.pendingEmail = undefined;
+      user.emailChangeOtp = undefined;
+      user.emailChangeOtpExpires = undefined;
+      await user.save();
+      return res.status(400).json({ success: false, message: 'OTP expired. Start again.' });
+    }
+    if (user.emailChangeOtp !== otp) {
+      return res.status(400).json({ success: false, message: 'Invalid OTP' });
+    }
+    user.email = user.pendingEmail;
+    user.pendingEmail = undefined;
+    user.emailChangeOtp = undefined;
+    user.emailChangeOtpExpires = undefined;
+    await user.save();
+    res.json({ success: true, message: 'Email updated successfully', data: { email: user.email } });
+  } catch (error) {
+    console.error('Error verifying email change:', error);
+    res.status(500).json({ success: false, message: 'Failed to verify email change' });
+  }
+};
+
+// Resend OTP (if pending and not expired). If expired, generate new.
+const resendEmailChangeOtp = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if(!user) return res.status(404).json({ success:false, message:'User not found'});
+    if(!user.pendingEmail) return res.status(400).json({ success:false, message:'No pending email change'});
+    const stillValid = user.emailChangeOtp && user.emailChangeOtpExpires && user.emailChangeOtpExpires > Date.now();
+    if(!stillValid){
+      user.emailChangeOtp = Math.floor(1000 + Math.random() * 9000).toString();
+      user.emailChangeOtpExpires = Date.now() + 5 * 60 * 1000;
+      await user.save();
+    }
+  await sendOtpEmail(user.pendingEmail, user.emailChangeOtp, { title: 'Confirm Your New Email', subject: 'Your WasteZero email change OTP', variant: 'email-change' });
+    res.json({ success:true, message:'OTP resent' });
+  } catch(err){
+    console.error('Error resending email change OTP:', err);
+    res.status(500).json({ success:false, message:'Failed to resend OTP'});
+  }
+};
 
 // Get all available opportunities
 const getAllOpportunities = async (req, res) => {
@@ -12,7 +146,7 @@ const getAllOpportunities = async (req, res) => {
     const { category, location, page = 1, limit = 10 } = req.query;
     
     // Build query
-    const query = { status: 'active' };
+    const query = {}; // Remove status filter to show all events
     if (category && category !== 'all') {
       query.category = category;
     }
@@ -25,7 +159,7 @@ const getAllOpportunities = async (req, res) => {
     
     // Fetch opportunities from database
     const opportunities = await Opportunity.find(query)
-      .populate('createdBy', 'name email')
+      .populate('createdBy', 'name email profileImage')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -122,10 +256,10 @@ const applyForOpportunity = async (req, res) => {
       });
     }
 
-    // Check if user already applied
+    // Check if user already applied for THIS SPECIFIC opportunity
     const existingApplication = await Application.findOne({
-      opportunityId,
-      volunteerId
+      opportunityId: opportunityId,
+      volunteerId: volunteerId
     });
 
     if (existingApplication) {
@@ -147,6 +281,21 @@ const applyForOpportunity = async (req, res) => {
     await newApplication.save();
     await newApplication.populate('opportunityId', 'title date location');
     await newApplication.populate('volunteerId', 'name email');
+
+    // Create notification for NGO about new application
+    try {
+      await createApplicationReceivedNotification({
+        ngoId: opportunity.createdBy,
+        volunteerId: volunteerId,
+        eventId: opportunityId,
+        applicationId: newApplication._id,
+        volunteerName: newApplication.volunteerId.name,
+        eventTitle: newApplication.opportunityId.title
+      });
+    } catch (notificationError) {
+      console.error('Failed to create application notification:', notificationError);
+      // Don't fail the application submission if notification fails
+    }
 
     res.status(201).json({
       success: true,
@@ -193,7 +342,7 @@ const getMyApplications = async (req, res) => {
         path: 'opportunityId',
         populate: {
           path: 'createdBy',
-          select: 'name email'
+          select: 'name email profileImage'
         }
       })
       .sort({ appliedAt: -1 })
@@ -354,5 +503,10 @@ module.exports = {
   applyForOpportunity,
   getMyApplications,
   withdrawApplication,
-  getDashboardStats
+  getDashboardStats,
+  getProfile,
+  updateProfile,
+  initiateEmailChange,
+  verifyEmailChange,
+  resendEmailChangeOtp
 };

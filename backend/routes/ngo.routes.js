@@ -18,31 +18,26 @@ const {
   getVolunteerReport
 } = require('../controllers/ngo.controller');
 
-// Middleware to check if user is NGO (you'll need to implement authentication middleware)
-const requireNGO = (req, res, next) => {
-  // Mock authentication - in real app, verify JWT and check role
-  // For now, just set mock user data
-  req.user = {
-    id: '64f123456789abcdef123456', // Mock NGO user ID
-    role: 'ngo', // Fixed: lowercase 'ngo'
-    name: 'Green Earth NGO'
-  };
-  
-  // Temporarily disable role check for testing (kept from 'main' branch)
-  // if (req.user.role !== 'ngo') {
-  //   return res.status(403).json({
-  //     success: false,
-  //     message: 'Access denied. NGO role required.'
-  //   });
-  // }
-  
+const protectRoute = require('../middleware/protectRoute');
+
+// Apply authentication middleware to all routes
+router.use(protectRoute);
+
+// Optional: Add role-based access control middleware
+const requireNGORole = (req, res, next) => {
+  if (req.user.role && req.user.role !== 'ngo') {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. NGO role required.'
+    });
+  }
   next();
 };
 
-// Apply NGO role check to all routes
-router.use(requireNGO);
+// Apply NGO role check (commented out for development - uncomment for production)
+// router.use(requireNGORole);
 
-// Test route to verify server is working (kept from 'main' branch)
+// Test route to verify server is working
 router.get('/test', (req, res) => {
   res.json({ success: true, message: 'NGO routes working', user: req.user });
 });

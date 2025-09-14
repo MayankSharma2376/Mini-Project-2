@@ -1,18 +1,11 @@
 const User = require('../models/user.model');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
+const { sendOtpEmail } = require('../utils/mailer');
 
 const dotenv = require('dotenv');
 dotenv.config();
 
-// Nodemailer setup
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
+// Email sending handled via utils/mailer
 
 // 1. Register (Send OTP)
 const register = async (req, res) => {
@@ -46,24 +39,7 @@ const register = async (req, res) => {
       isVerified: false
     });
 
-    // Send OTP email
-    await transporter.sendMail({
-      from: `"WasteZero Support" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "Verify your WasteZero account",
-      html: `
-        <div style="font-family: Arial, sans-serif; background: #f9fafb; padding: 30px; text-align: center;">
-          <div style="max-width: 500px; margin: auto; background: #ffffff; border-radius: 12px; padding: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-            <h2 style="color:#2f855a;">Welcome to WasteZero ♻️</h2>
-            <p style="color:#374151;">Please verify your email by entering the OTP below. It is valid for <b>5 minutes</b>.</p>
-            <div style="background:#ecfdf5; color:#065f46; font-size:24px; font-weight:bold; padding:15px; border-radius:8px; letter-spacing:6px; margin:20px 0;">
-              ${otp}
-            </div>
-            <p style="color:#6b7280; font-size:12px;">If you didn’t register, you can ignore this email.</p>
-          </div>
-        </div>
-      `
-    });
+  await sendOtpEmail(email, otp, { title: 'Welcome to WasteZero ♻️', subject: 'Verify your WasteZero account' });
 
     return res.status(200).json({
       success: true,
@@ -105,7 +81,7 @@ const verifyRegistrationOtp = async (req, res) => {
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
 
-    res.cookie("token", token, { httpOnly: true });
+  res.cookie("token", token, { httpOnly: true, sameSite: 'lax' });
     res.status(200).json({ success: true, message: "Account verified successfully", user });
   } catch (err) {
     console.error("Error in verifyRegistrationOtp:", err); // 👈 Full error
@@ -131,7 +107,7 @@ const login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );
-    res.cookie("token", token, { httpOnly: true });
+  res.cookie("token", token, { httpOnly: true, sameSite: 'lax' });
 
     res.status(200).json({ success: true, user, token });
   } catch (err) {

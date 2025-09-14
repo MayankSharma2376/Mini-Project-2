@@ -40,7 +40,7 @@ const applicationSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Compound index to prevent duplicate applications
+// Compound index to prevent duplicate applications - use correct field names
 applicationSchema.index({ opportunityId: 1, volunteerId: 1 }, { unique: true });
 
 // Index for efficient queries
