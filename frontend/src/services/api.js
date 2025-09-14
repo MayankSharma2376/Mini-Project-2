@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const baseURL = import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:4000/api';
+
 const api = axios.create({
-  baseURL: 'http://localhost:4000/api', // Updated to point to backend server
+  baseURL, // configurable via VITE_API_BASE_URL
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -16,11 +18,18 @@ export const authAPI = {
 
   login: async (credentials) => {
     const response = await api.post('/auth/login', credentials);
+    try {
+      const user = response.data?.user;
+      if (user?._id || user?.id) {
+        localStorage.setItem('authUserId', user._id || user.id);
+      }
+    } catch {}
     return response.data;
   },
 
   logout: async () => {
-    const response = await api.post('/auth/logout');
+  const response = await api.post('/auth/logout');
+  try { localStorage.removeItem('authUserId'); } catch {}
     return response.data;
   },
 
@@ -274,8 +283,24 @@ export const volunteerAPI = {
   },
 
   // Profile and notifications
+  getProfile: async () => {
+    const response = await api.get('/volunteer/profile');
+    return response.data;
+  },
   updateProfile: async (profileData) => {
     const response = await api.put('/volunteer/profile', profileData);
+    return response.data;
+  },
+  initiateEmailChange: async (newEmail) => {
+    const response = await api.post('/volunteer/profile/email-change', { newEmail });
+    return response.data;
+  },
+  verifyEmailChange: async (otp) => {
+    const response = await api.post('/volunteer/profile/email-change/verify', { otp });
+    return response.data;
+  },
+  resendEmailChangeOtp: async () => {
+    const response = await api.post('/volunteer/profile/email-change/resend');
     return response.data;
   },
 
@@ -312,5 +337,28 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Notification API
+export const notificationAPI = {
+  getNotifications: async (page = 1, limit = 20) => {
+    const response = await api.get(`/notifications?page=${page}&limit=${limit}`);
+    return response.data;
+  },
+
+  markAsRead: async (notificationId) => {
+    const response = await api.patch(`/notifications/${notificationId}/read`);
+    return response.data;
+  },
+
+  markAllAsRead: async () => {
+    const response = await api.patch('/notifications/mark-all-read');
+    return response.data;
+  },
+
+  deleteNotification: async (notificationId) => {
+    const response = await api.delete(`/notifications/${notificationId}`);
+    return response.data;
+  }
+};
 
 export default api;

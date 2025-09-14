@@ -2,6 +2,7 @@
 const User = require('../models/user.model');
 const Opportunity = require('../models/opportunity.model');
 const Application = require('../models/application.model');
+const { createApplicationStatusNotification, createNewEventNotification } = require('./notification.controller');
 
 // Get NGO Dashboard Stats
 const getDashboardStats = async (req, res) => {
@@ -101,13 +102,34 @@ const getMyEvents = async (req, res) => {
     // Query database for actual events created by this NGO
     const opportunities = await Opportunity.find({ createdBy: ngoId })
       .sort({ createdAt: -1 })
-      .populate('createdBy', 'name email');
+      .populate('createdBy', 'name email profileImage');
 
-    console.log('Returning real events:', opportunities.length); // Debug log
+    // Format events for frontend compatibility
+    const formattedEvents = opportunities.map(opp => ({
+      id: opp._id,
+      _id: opp._id,
+      title: opp.title,
+      description: opp.description,
+      location: opp.location,
+      date: opp.date,
+      capacity: opp.capacity,
+      registered: opp.registeredCount || 0,
+      status: opp.status,
+      category: opp.category,
+      duration: opp.duration,
+      requiredSkills: opp.requiredSkills || [],
+      applicationDeadline: opp.applicationDeadline,
+      imageUrl: opp.image,
+      createdBy: opp.createdBy?.name || 'Unknown NGO',
+      createdAt: opp.createdAt,
+      updatedAt: opp.updatedAt
+    }));
+
+    console.log('Returning real events:', formattedEvents.length); // Debug log
 
     res.json({
       success: true,
-      data: opportunities
+      data: formattedEvents
     });
   } catch (error) {
     console.error('Error fetching NGO events:', error);
@@ -123,8 +145,9 @@ const getMyEvents = async (req, res) => {
 const createEvent = async (req, res) => {
   try {
     console.log('Creating event with data:', req.body); // Debug log
-    const { title, description, location, date, capacity, category, duration, requiredSkills, applicationDeadline } = req.body;
-    const ngoId = req.user.id;
+    console.log('User data:', req.user); // Debug log
+    const { title, description, location, date, capacity, category, duration, requiredSkills, applicationDeadline, image } = req.body;
+    const ngoId = req.user._id || req.user.id; // Handle both _id and id
 
     // Validation - Fixed to match frontend fields
     if (!title || !description || !location || !date || !capacity) {
@@ -149,6 +172,30 @@ const createEvent = async (req, res) => {
       });
     }
 
+    // Handle image data properly - convert to string if it's an object
+    let imageData = null;
+    if (image) {
+      if (typeof image === 'string' && image.trim()) {
+        // Valid base64 string
+        imageData = image.trim();
+      } else if (typeof image === 'object') {
+        // Handle object formats that might contain the image data
+        if (image.imagePreview && typeof image.imagePreview === 'string') {
+          imageData = image.imagePreview;
+        } else if (image.data && typeof image.data === 'string') {
+          imageData = image.data;
+        } else if (image.src && typeof image.src === 'string') {
+          imageData = image.src;
+        } else {
+          console.log('Invalid image object format, ignoring:', Object.keys(image));
+          imageData = null;
+        }
+      } else {
+        console.log('Invalid image format, expected string but got:', typeof image);
+        imageData = null;
+      }
+    }
+
     // Create new opportunity in database
     const newOpportunity = new Opportunity({
       title: title.trim(),
@@ -156,10 +203,11 @@ const createEvent = async (req, res) => {
       location: location.trim(),
       date: new Date(date),
       capacity: parseInt(capacity),
-      category: category || 'Environmental',
+      category: category || 'environmental',
       duration: duration || '4 hours', // Default duration if not provided
       requiredSkills: requiredSkills || [],
       applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null,
+      image: imageData, // Store processed image data
       createdBy: ngoId,
       registeredCount: 0,
       status: 'active'
@@ -169,6 +217,22 @@ const createEvent = async (req, res) => {
     await savedOpportunity.populate('createdBy', 'name email');
 
     console.log('Event saved to database:', savedOpportunity._id); // Debug log
+
+    // Create notifications for all volunteers about the new event
+    try {
+      await createNewEventNotification({
+        eventId: savedOpportunity._id,
+        eventTitle: savedOpportunity.title,
+        ngoName: savedOpportunity.createdBy.name,
+        ngoId: ngoId,
+        location: savedOpportunity.location,
+        date: savedOpportunity.date
+      });
+      console.log('New event notifications created successfully');
+    } catch (notificationError) {
+      console.error('Error creating new event notifications:', notificationError);
+      // Don't fail the event creation if notifications fail
+    }
 
     res.status(201).json({
       success: true,
@@ -326,9 +390,26 @@ const getEventRegistrations = async (req, res) => {
       .populate('volunteerId', 'name email phone skills location bio')
       .sort({ appliedAt: -1 });
 
+    // Format applications for frontend
+    const formattedApplications = applications.map(app => ({
+      id: app._id,
+      _id: app._id,
+      eventId: app.opportunityId,
+      volunteerName: app.volunteerId?.name || 'Unknown Volunteer',
+      email: app.volunteerId?.email || 'No email provided',
+      phone: app.volunteerId?.phone || 'No phone provided',
+      status: app.status,
+      appliedAt: app.appliedAt,
+      experience: app.volunteerId?.experience || 'Not specified',
+      skills: app.volunteerId?.skills || [],
+      message: app.applicationMessage || 'No message provided',
+      location: app.volunteerId?.location || 'Not specified',
+      bio: app.volunteerId?.bio || 'No bio available'
+    }));
+
     res.json({
       success: true,
-      data: applications
+      data: formattedApplications
     });
   } catch (error) {
     console.error('Error fetching event registrations:', error);
@@ -568,8 +649,8 @@ const reviewApplication = async (req, res) => {
 
     // Find the application
     const application = await Application.findById(registrationId)
-      .populate('opportunity')
-      .populate('volunteer');
+      .populate('opportunityId')
+      .populate('volunteerId');
 
     if (!application) {
       return res.status(404).json({
@@ -579,19 +660,55 @@ const reviewApplication = async (req, res) => {
     }
 
     // Check if the opportunity belongs to the NGO
-    if (application.opportunity.createdBy.toString() !== ngoId) {
+    if (application.opportunityId.createdBy.toString() !== ngoId) {
       return res.status(403).json({
         success: false,
         message: 'You can only review applications for your own opportunities'
       });
     }
 
+    // Store previous status for registration count updates
+    const previousStatus = application.status;
+
     // Update application status
     application.status = status;
-    application.reviewNote = reviewNote;
+    application.reviewMessage = reviewNote;
     application.reviewedAt = new Date();
+    application.reviewedBy = ngoId;
 
     await application.save();
+
+    // Update opportunity registration count based on status change
+    if (status === 'accepted' && previousStatus !== 'accepted') {
+      // New acceptance - increment count
+      await Opportunity.findByIdAndUpdate(eventId, {
+        $inc: { registeredCount: 1 }
+      });
+    } else if (previousStatus === 'accepted' && status === 'rejected') {
+      // Previously accepted, now rejected - decrement count
+      await Opportunity.findByIdAndUpdate(eventId, {
+        $inc: { registeredCount: -1 }
+      });
+    }
+
+    console.log(`Application ${registrationId} ${status} for event ${eventId} (previous: ${previousStatus})`);
+
+    // Create notification for volunteer about application status change
+    try {
+      const ngoUser = await User.findById(ngoId).select('name');
+      await createApplicationStatusNotification({
+        volunteerId: application.volunteerId._id,
+        ngoId: ngoId,
+        eventId: application.opportunityId._id,
+        applicationId: application._id,
+        status: status,
+        eventTitle: application.opportunityId.title,
+        ngoName: ngoUser.name
+      });
+    } catch (notificationError) {
+      console.error('Failed to create application status notification:', notificationError);
+      // Don't fail the review if notification fails
+    }
 
     res.json({
       success: true,

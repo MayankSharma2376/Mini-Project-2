@@ -42,6 +42,11 @@ const userSchema = new mongoose.Schema({
     default: '',
     maxLength: 400,
   },
+  // Base64 or URL for profile image
+  profileImage: {
+    type: String,
+    default: ''
+  },
   otp: { 
     type: String 
   }, // store OTP temporarily
@@ -52,6 +57,18 @@ const userSchema = new mongoose.Schema({
   isVerified: {
     type: Boolean,
     default: false
+  }
+  ,
+  // Email change flow
+  pendingEmail: {
+    type: String,
+    lowercase: true
+  },
+  emailChangeOtp: {
+    type: String
+  },
+  emailChangeOtpExpires: {
+    type: Date
   }
   
 })

@@ -49,6 +49,11 @@ const opportunitySchema = new mongoose.Schema({
   applicationDeadline: {
     type: Date
   },
+  // Image data as base64 string
+  image: {
+    type: String, // Store base64 image data
+    default: null
+  },
   // Track registered participants count
   registeredCount: {
     type: Number,

@@ -2,11 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { SearchIcon, Bell, ChevronDown, User, Settings, LogOut } from 'lucide-react';
+import { useNotifications } from '../contexts/NotificationContext';
 
 
 const Navbar = () => {
   const navigate = useNavigate();
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const { unreadCount } = useNotifications();
   const dropdownRef = useRef(null);
 
   // Get user info from localStorage
@@ -66,7 +68,7 @@ const Navbar = () => {
         <div className='flex justify-between items-center h-full px-6'>
           {/* left panel - logo */}
           <div className='flex items-center'>
-            <img src="./recycle.svg" alt="WasteZero Logo" className="size-11 rounded-full" />
+            <img src="/recycle.svg" alt="WasteZero Logo" className="size-11 rounded-full" />
             <span className="ml-2 text-xl hidden md:block font-semibold text-white">WasteZero</span>
           </div>
 
@@ -85,12 +87,17 @@ const Navbar = () => {
               <SearchIcon className='text-gray-400 size-5 mr-2 flex-shrink-0' />
               <input type="text" placeholder="Search opportunities..." className="outline-none bg-transparent flex-1 text-gray-700 placeholder-gray-400" />
             </div>
-            <div>
+            <div className="relative">
               <button 
                 onClick={handleNotificationClick}
-                className="p-2 hover:bg-[#588157] rounded-lg transition-colors duration-200"
+                className="p-2 hover:bg-[#588157] rounded-lg transition-colors duration-200 relative"
               >
                 <Bell className='text-white size-5' />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
               </button>
             </div>
 
