@@ -14,60 +14,68 @@ import Sidebar from './components/Side';
 import Forgot_Password from './pages/Forgot_Password';
 import Homepage from './pages/Homepage';
 import MessagePage from './pages/MessagePage';
+import MyProfile from './pages/MyProfile';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 function App() {
 
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-50">
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Homepage />} />
-          <Route path="/auth" element={<AuthPage />} />
-          <Route path="/login" element={<AuthPage />} />
-          <Route path="/register" element={<AuthPage />} />
-          <Route path="/forgot-password" element={<Forgot_Password />} />
-          <Route path="/otp" element={<Forgot_Password />} />
+    <NotificationProvider>
+      <Router>
+        <div className="min-h-screen bg-gray-50">
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Homepage />} />
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/login" element={<AuthPage />} />
+            <Route path="/register" element={<AuthPage />} />
+            <Route path="/forgot-password" element={<Forgot_Password />} />
+            <Route path="/otp" element={<Forgot_Password />} />
 
-          {/* Admin Routes */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="message" element={<MessagePage />} />
-            <Route path="notifications" element={<NotificationsPage />} />
-          </Route>
+            {/* Admin Routes */}
 
-          {/* Volunteer Routes */}
-          <Route path="/volunteer" element={<VolunteerLayout />}>
-            <Route index element={<VolunteerDashboard />} />
-            <Route path="dashboard" element={<VolunteerDashboard />} />
-            <Route path="message" element={<MessagePage />} />
-            <Route path="notifications" element={<NotificationsPage />} />
-          </Route>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="message" element={<MessagePage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="profile" element={<MyProfile />} />
+            </Route>
 
-          {/* NGO Routes */}
-          <Route path="/ngo" element={<NGOLayout />}>
-            <Route index element={<NGODashboard />} />
-            <Route path="dashboard" element={<NGODashboard />} />
-            <Route path="notifications" element={<NotificationsPage />} />
-          </Route>
+            {/* Volunteer Routes */}
+            <Route path="/volunteer" element={<VolunteerLayout />}>
+              <Route index element={<VolunteerDashboard />} />
+              <Route path="dashboard" element={<VolunteerDashboard />} />
+              <Route path="message" element={<MessagePage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="profile" element={<MyProfile />} />
+            </Route>
 
-          {/* Catch all route - redirect to home */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-        <ToastContainer 
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-        />
-      </div>
-    </Router>
+            {/* NGO Routes */}
+            <Route path="/ngo" element={<NGOLayout />}>
+              <Route index element={<NGODashboard />} />
+              <Route path="dashboard" element={<NGODashboard />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="profile" element={<MyProfile />} />
+            </Route>
+
+            {/* Catch all route - redirect to home */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+          <ToastContainer 
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+          />
+        </div>
+      </Router>
+    </NotificationProvider>
   )
 }
 

@@ -33,13 +33,22 @@ export default function VolunteerDashboard() {
     upcomingEvents: 0
   });
   const [loading, setLoading] = useState(true);
+  const [applyingTo, setApplyingTo] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
+  const [enlargedImage, setEnlargedImage] = useState(null);
 
   // Load dashboard data
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  // Refresh opportunities when switching to opportunities tab
+  useEffect(() => {
+    if (activeTab === 'opportunities') {
+      loadDashboardData();
+    }
+  }, [activeTab]);
 
   const loadDashboardData = async () => {
     try {
@@ -64,6 +73,12 @@ export default function VolunteerDashboard() {
       console.log('Processed stats:', statsData);
       console.log('Processed opportunities:', opportunitiesData);
       console.log('Processed applications:', applicationsData);
+      
+      // Debug: Check application structure
+      if (applicationsData && applicationsData.length > 0) {
+        console.log('Sample application structure:', applicationsData[0]);
+        console.log('Sample application opportunityId:', applicationsData[0].opportunityId);
+      }
 
       setStats({
         totalApplications: statsData.totalApplications || 0,
@@ -90,12 +105,15 @@ export default function VolunteerDashboard() {
 
   const handleApplyForOpportunity = async (opportunityId) => {
     try {
+      setApplyingTo(opportunityId);
       await volunteerAPI.applyForOpportunity(opportunityId);
       toast.success('Application submitted successfully!');
       loadDashboardData(); // Refresh data
     } catch (error) {
       console.error('Error applying for opportunity:', error);
       toast.error(error.response?.data?.message || 'Failed to apply for opportunity');
+    } finally {
+      setApplyingTo(null);
     }
   };
 
@@ -115,6 +133,7 @@ export default function VolunteerDashboard() {
     const matchesSearch = opportunity.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          opportunity.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === 'all' || opportunity.category === filterCategory;
+    // Show both active and inactive events
     return matchesSearch && matchesCategory;
   });
 
@@ -234,46 +253,115 @@ export default function VolunteerDashboard() {
       {/* Opportunities Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredOpportunities.map(opportunity => (
-          <div key={opportunity._id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{opportunity.title}</h3>
-                <p className="text-sm text-gray-600 mb-3 line-clamp-2">{opportunity.description}</p>
+          <div key={opportunity._id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            {/* Event Image */}
+            {opportunity.image && (
+              <div className="h-48 w-full cursor-pointer" onClick={() => setEnlargedImage(opportunity.image)}>
+                <img 
+                  src={opportunity.image} 
+                  alt={opportunity.title}
+                  className="h-full w-full object-cover hover:opacity-90 transition-opacity"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
               </div>
-              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                opportunity.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-              }`}>
-                {opportunity.status}
-              </span>
-            </div>
+            )}
+            
+            <div className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{opportunity.title}</h3>
+                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">{opportunity.description}</p>
+                </div>
+                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                  opportunity.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}>
+                  {opportunity.status}
+                </span>
+              </div>
 
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center text-sm text-gray-500">
-                <MapPin className="h-4 w-4 mr-2" />
-                {opportunity.location}
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center text-sm text-gray-500">
+                  <MapPin className="h-4 w-4 mr-2" />
+                  {opportunity.location}
+                </div>
+                <div className="flex items-center text-sm text-gray-500">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  {new Date(opportunity.date).toLocaleDateString()}
+                </div>
+                <div className="flex items-center text-sm text-gray-500">
+                  <Users className="h-4 w-4 mr-2" />
+                  {opportunity.registeredCount}/{opportunity.capacity} volunteers
+                </div>
               </div>
-              <div className="flex items-center text-sm text-gray-500">
-                <Calendar className="h-4 w-4 mr-2" />
-                {new Date(opportunity.date).toLocaleDateString()}
-              </div>
-              <div className="flex items-center text-sm text-gray-500">
-                <Users className="h-4 w-4 mr-2" />
-                {opportunity.registeredCount}/{opportunity.capacity} volunteers
-              </div>
-            </div>
 
-            <div className="flex items-center justify-between">
-              <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                {opportunity.category}
-              </span>
-              <button
-                onClick={() => handleApplyForOpportunity(opportunity._id)}
-                disabled={opportunity.isFull || loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {opportunity.isFull ? 'Full' : 'Apply'}
-              </button>
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                  {opportunity.category}
+                </span>
+                {(() => {
+                  const application = applications.find(app => {
+                    // Handle both populated and non-populated opportunityId
+                    const appOpportunityId = app.opportunityId?._id || app.opportunityId;
+                    return appOpportunityId === opportunity._id;
+                  });
+                
+                if (application) {
+                  if (application.status === 'pending') {
+                    return (
+                      <button
+                        disabled
+                        className="px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-lg cursor-not-allowed"
+                      >
+                        Applied - Pending
+                      </button>
+                    );
+                  } else if (application.status === 'accepted') {
+                    return (
+                      <button
+                        disabled
+                        className="px-4 py-2 text-sm font-medium text-white bg-green-500 rounded-lg cursor-not-allowed"
+                      >
+                        ✓ Accepted
+                      </button>
+                    );
+                  } else if (application.status === 'rejected') {
+                    return (
+                      <button
+                        disabled
+                        className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg cursor-not-allowed"
+                      >
+                        Rejected
+                      </button>
+                    );
+                  }
+                }
+                
+                // If opportunity is inactive, show disabled button
+                if (opportunity.status !== 'active') {
+                  return (
+                    <button
+                      disabled
+                      className="px-4 py-2 text-sm font-medium text-white bg-gray-400 rounded-lg cursor-not-allowed"
+                    >
+                      Event Inactive
+                    </button>
+                  );
+                }
+                
+                return (
+                  <button
+                    onClick={() => handleApplyForOpportunity(opportunity._id)}
+                    disabled={opportunity.isFull || loading || applyingTo === opportunity._id}
+                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {applyingTo === opportunity._id ? 'Applying...' : opportunity.isFull ? 'Full' : 'Apply'}
+                  </button>
+                );
+              })()}
             </div>
+          </div>
           </div>
         ))}
       </div>
@@ -302,17 +390,17 @@ export default function VolunteerDashboard() {
                 <div key={application._id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="text-lg font-medium text-gray-900">{application.opportunity?.title}</h3>
-                      <p className="text-sm text-gray-600 mb-2">{application.opportunity?.description}</p>
+                      <h3 className="text-lg font-medium text-gray-900">{application.opportunityId?.title || application.opportunity?.title}</h3>
+                      <p className="text-sm text-gray-600 mb-2">{application.opportunityId?.description || application.opportunity?.description}</p>
                       
                       <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
                         <div className="flex items-center">
                           <Calendar className="h-4 w-4 mr-1" />
-                          {new Date(application.opportunity?.date).toLocaleDateString()}
+                          {new Date(application.opportunityId?.date || application.opportunity?.date).toLocaleDateString()}
                         </div>
                         <div className="flex items-center">
                           <MapPin className="h-4 w-4 mr-1" />
-                          {application.opportunity?.location}
+                          {application.opportunityId?.location || application.opportunity?.location}
                         </div>
                         <div className="flex items-center">
                           <Clock className="h-4 w-4 mr-1" />
@@ -432,6 +520,29 @@ export default function VolunteerDashboard() {
           {activeTab === 'applications' && renderApplicationsTab()}
         </main>
       </div>
+      
+      {/* Image Enlargement Modal */}
+      {enlargedImage && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4"
+          onClick={() => setEnlargedImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-full">
+            <img 
+              src={enlargedImage} 
+              alt="Enlarged view"
+              className="max-w-full max-h-full object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              onClick={() => setEnlargedImage(null)}
+              className="absolute top-4 right-4 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-75 transition-all"
+            >
+              <XCircle className="h-6 w-6" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

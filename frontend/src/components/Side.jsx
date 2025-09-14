@@ -31,13 +31,13 @@ const Side = () => {
     window.history.replaceState(null, '', '/login');
   };
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: 'dashboard' },
-    { icon: Leaf, label: 'Eco Opportunities', path: 'eco-opportunities' },
-    { icon: Calendar, label: 'Pickup Schedule', path: 'pickup-schedule' },
-    { icon: MessageCircle, label: 'Messages', path: 'message' },
-    { icon: User, label: 'My Profile', path: 'profile' },
-    { icon: Settings, label: 'Settings', path: 'settings' },
-    { icon: HelpCircle, label: 'Help & Support', path: 'help' },
+  { icon: LayoutDashboard, label: 'Dashboard', path: 'dashboard' },
+  { icon: Leaf, label: 'Eco Opportunities', path: 'eco-opportunities' },
+  { icon: Calendar, label: 'Pickup Schedule', path: 'pickup-schedule' },
+  { icon: MessageCircle, label: 'Messages', path: 'message' },
+  { icon: User, label: 'My Profile', path: 'profile' },
+  { icon: Settings, label: 'Settings', path: 'settings' },
+  { icon: HelpCircle, label: 'Help & Support', path: 'help' },
   ];
 
   const location = useLocation();
@@ -57,6 +57,7 @@ const Side = () => {
           {menuItems.map((item, index) => {
             const IconComponent = item.icon;
             // Construct the full path dynamically
+            // Special case for My Profile: always go to /{basePath}/profile
             const fullPath = `/${basePath}/${item.path}`;
 
             // Check if the current URL matches the link's path.
