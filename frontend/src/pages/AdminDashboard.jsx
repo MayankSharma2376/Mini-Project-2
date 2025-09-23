@@ -24,13 +24,14 @@ import {
   Navigation
 } from 'lucide-react'
 import { adminAPI } from '../services/api'
+import WasteZeroAnalytics from './AnalyticDashboard'
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-  const [activeTab, setActiveTab] = useState('dashboard') // dashboard, pickups, agents
+  const [activeTab, setActiveTab] = useState('dashboard') // dashboard, pickups, agents, analytics
 
   // Check if mobile screen size
   useEffect(() => {
@@ -375,7 +376,8 @@ const AdminDashboard = () => {
             {[
               { id: 'dashboard', label: 'Overview', icon: BarChart3, hideOnMobile: false },
               { id: 'pickups', label: 'Pickups', icon: Package, hideOnMobile: false },
-              { id: 'agents', label: 'Agents', icon: Truck, hideOnMobile: false }
+              { id: 'agents', label: 'Agents', icon: Truck, hideOnMobile: false },
+              { id: 'analytics', label: 'Analytics', icon: TrendingUp, hideOnMobile: false }
             ].map(tab => (
               <button
                 key={tab.id}
@@ -957,6 +959,9 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
+
+        {/* Analytics Tab Content */}
+        {activeTab === 'analytics' && <WasteZeroAnalytics userRole="admin" />}
       </div>
 
       {/* Enhanced Create Opportunity Modal */}

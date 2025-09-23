@@ -2,6 +2,7 @@
 const User = require('../models/user.model');
 const Opportunity = require('../models/opportunity.model');
 const Application = require('../models/application.model');
+const matchingService = require('../services/matchingService');
 const { createApplicationReceivedNotification } = require('./notification.controller');
 // Added profile handlers
  
@@ -143,7 +144,7 @@ const getAllOpportunities = async (req, res) => {
     console.log('getAllOpportunities called'); // Debug log
     
     // Query parameters for filtering
-    const { category, location, page = 1, limit = 10 } = req.query;
+    const { category, location, page = 1, limit = 10, includeMatched = 'true' } = req.query;
     
     // Build query
     const query = {}; // Remove status filter to show all events
@@ -157,25 +158,65 @@ const getAllOpportunities = async (req, res) => {
     // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    // Fetch opportunities from database
-    const opportunities = await Opportunity.find(query)
-      .populate('createdBy', 'name email profileImage')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
+    let allOpportunities = [];
+    let matchedOpportunities = [];
+    let regularOpportunities = [];
     
-    const totalOpportunities = await Opportunity.countDocuments(query);
+    // Get matched opportunities first if requested
+    if (includeMatched === 'true' && req.user && req.user.id) {
+      try {
+        const matches = await matchingService.findMatchingOpportunities(req.user.id, 50);
+        matchedOpportunities = matches.map(match => ({
+          ...match.opportunity.toObject(),
+          matchScore: match.score,
+          matchReasons: match.matchReasons,
+          isMatched: true
+        }));
+        console.log(`Found ${matchedOpportunities.length} matched opportunities`);
+      } catch (error) {
+        console.error('Error getting matched opportunities:', error);
+        // Continue without matches if error occurs
+      }
+    }
+    
+    // Fetch all opportunities from database
+    const dbOpportunities = await Opportunity.find(query)
+      .populate('createdBy', 'name email profileImage')
+      .sort({ createdAt: -1 });
+    
+    // Get IDs of matched opportunities to avoid duplicates
+    const matchedIds = matchedOpportunities.map(op => op._id.toString());
+    
+    // Filter out already matched opportunities from regular list
+    regularOpportunities = dbOpportunities
+      .filter(op => !matchedIds.includes(op._id.toString()))
+      .map(op => ({
+        ...op.toObject(),
+        isMatched: false
+      }));
+    
+    // Combine matched opportunities first, then regular ones
+    allOpportunities = [...matchedOpportunities, ...regularOpportunities];
+    
+    // Apply pagination to combined results
+    const paginatedOpportunities = allOpportunities.slice(skip, skip + parseInt(limit));
+    const totalOpportunities = allOpportunities.length;
 
-    console.log('Returning real opportunities:', opportunities.length);
+    console.log(`Returning ${paginatedOpportunities.length} opportunities (${matchedOpportunities.length} matched, ${regularOpportunities.length} regular)`);
 
     res.json({
       success: true,
-      data: opportunities,
+      data: paginatedOpportunities,
+      meta: {
+        matchedCount: matchedOpportunities.length,
+        regularCount: regularOpportunities.length,
+        totalCount: totalOpportunities
+      },
       pagination: {
         currentPage: parseInt(page),
         totalPages: Math.ceil(totalOpportunities / parseInt(limit)),
         totalItems: totalOpportunities,
-        hasNext: skip + opportunities.length < totalOpportunities,
+        hasNext: skip + paginatedOpportunities.length < totalOpportunities,
         hasPrev: parseInt(page) > 1
       }
     });
@@ -497,6 +538,260 @@ const getDashboardStats = async (req, res) => {
   }
 };
 
+// Get volunteer analytics (comprehensive analytics for personal view)
+const getAnalytics = async (req, res) => {
+  try {
+    const volunteerId = req.user.id;
+
+    console.log('🔍 Volunteer Analytics Request:', { volunteerId }); // Debug log
+
+    // Get volunteer details
+    const volunteer = await User.findById(volunteerId)
+      .select('name email createdAt skills location bio');
+
+    if (!volunteer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Volunteer not found'
+      });
+    }
+
+    // Get all volunteer applications
+    const applications = await Application.find({ volunteerId })
+      .populate('opportunityId', 'title date category location createdBy')
+      .sort({ createdAt: -1 });
+
+    console.log(`📝 Found ${applications.length} applications for volunteer ${volunteerId}`); // Debug log
+
+    // Calculate statistics
+    const totalApplications = applications.length;
+    const acceptedApplications = applications.filter(app => app.status === 'accepted').length;
+    const pendingApplications = applications.filter(app => app.status === 'pending').length;
+    const rejectedApplications = applications.filter(app => app.status === 'rejected').length;
+
+    // Calculate environmental impact
+    const hoursVolunteered = acceptedApplications * 4; // 4 hours per event
+    const wasteCollected = acceptedApplications * 15; // 15kg per event
+    const treesPlanted = Math.floor(acceptedApplications * 0.8); // 0.8 trees per event
+    const co2Saved = Math.floor(wasteCollected * 0.5); // 0.5kg CO2 per kg waste
+
+    // Get NGOs worked with
+    const ngoIds = [...new Set(applications
+      .filter(app => app.opportunityId?.createdBy)
+      .map(app => app.opportunityId.createdBy))];
+    
+    const ngosWorkedWith = await User.find({ 
+      _id: { $in: ngoIds }, 
+      role: 'ngo' 
+    }).select('name').limit(10);
+
+    // Calculate impact score
+    const impactScore = Math.floor(
+      (acceptedApplications * 10) + 
+      (hoursVolunteered * 2) + 
+      (wasteCollected * 0.5) + 
+      (treesPlanted * 5)
+    );
+
+    // Get monthly activity for the last 12 months (match NGO format)
+    const monthlyData = [];
+    const currentDate = new Date();
+    
+    for (let i = 11; i >= 0; i--) {
+      const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+      const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() - i + 1, 0, 23, 59, 59);
+      
+      // Count applications in this month
+      const monthApps = applications.filter(app => 
+        app.createdAt >= monthStart && app.createdAt <= monthEnd
+      );
+      
+      const acceptedThisMonth = monthApps.filter(app => app.status === 'accepted').length;
+      
+      monthlyData.push({
+        month: monthStart.toLocaleDateString('en-US', { month: 'short' }),
+        applications: monthApps.length,
+        accepted: acceptedThisMonth,
+        hours: acceptedThisMonth * 4,
+        waste: acceptedThisMonth * 15
+      });
+    }
+
+    console.log('📅 Monthly volunteer data generated:', monthlyData.map(m => ({
+      month: m.month,
+      applications: m.applications,
+      accepted: m.accepted
+    }))); // Debug log
+
+    // Get category participation (match NGO format)
+    const categoryStats = {};
+    applications.filter(app => app.status === 'accepted').forEach(app => {
+      const category = app.opportunityId?.category || 'Other';
+      categoryStats[category] = (categoryStats[category] || 0) + 1;
+    });
+
+    // Format for pie chart (match NGO format)
+    const activityTypeData = Object.entries(categoryStats).map(([name, value]) => ({
+      name,
+      value: Math.round((value / acceptedApplications) * 100) || 0,
+      count: value
+    }));
+
+    // If no accepted applications, provide sample data
+    if (activityTypeData.length === 0) {
+      console.log('⚠️ No accepted applications found, providing sample data for charts');
+      activityTypeData.push({ name: 'Environmental', value: 100, count: 0 });
+    }
+
+    console.log('📊 Volunteer activity categories:', categoryStats); // Debug log
+    console.log('📊 Activity type data for charts:', activityTypeData); // Debug log
+
+    const responseData = {
+      overview: {
+        totalApplications,
+        acceptedApplications,
+        pendingApplications,
+        rejectedApplications,
+        totalVolunteerHours: hoursVolunteered,
+        wasteCollected,
+        treesPlanted,
+        co2Saved,
+        impactScore
+      },
+      monthlyData,
+      activityTypeData,
+      volunteer: {
+        id: volunteer._id,
+        name: volunteer.name,
+        email: volunteer.email,
+        joinDate: volunteer.createdAt,
+        skills: volunteer.skills || [],
+        location: volunteer.location || 'Not specified',
+        bio: volunteer.bio || 'No bio available'
+      },
+      ngosWorkedWith: ngosWorkedWith.map(ngo => ({
+        id: ngo._id,
+        name: ngo.name || 'Unknown NGO'
+      })),
+      recentActivities: applications.slice(0, 10).map(app => ({
+        id: app._id,
+        event: app.opportunityId?.title || 'Unknown Event',
+        date: app.opportunityId?.date || new Date(),
+        status: app.status,
+        location: app.opportunityId?.location || 'Unknown',
+        appliedDate: app.createdAt
+      }))
+    };
+
+    console.log('📤 Sending volunteer analytics response:', JSON.stringify({
+      overview: responseData.overview,
+      monthlyDataLength: responseData.monthlyData.length,
+      monthlyDataSample: responseData.monthlyData.slice(0, 3),
+      activityTypeDataLength: responseData.activityTypeData.length,
+      activityTypeData: responseData.activityTypeData,
+      volunteerInfo: { name: responseData.volunteer.name, totalApps: totalApplications }
+    }, null, 2)); // Debug log
+
+    res.json({
+      success: true,
+      data: responseData
+    });
+  } catch (error) {
+    console.error('Error fetching volunteer analytics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch volunteer analytics'
+    });
+  }
+};
+
+// Get volunteer notifications (based on application status changes)
+const getNotifications = async (req, res) => {
+  try {
+    const volunteerId = req.user.id;
+    
+    // Get recent applications with status updates
+    const applications = await Application.find({ volunteerId })
+      .populate('opportunityId', 'title date location category')
+      .sort({ updatedAt: -1 })
+      .limit(10);
+
+    // Generate notifications from application status changes
+    const notifications = [];
+    
+    applications.forEach(app => {
+      if (app.status === 'accepted') {
+        notifications.push({
+          id: `accepted_${app._id}`,
+          type: 'application_accepted',
+          message: `Your application for "${app.opportunityId?.title || 'an event'}" has been accepted!`,
+          createdAt: app.updatedAt,
+          eventId: app.opportunityId?._id,
+          eventTitle: app.opportunityId?.title,
+          eventDate: app.opportunityId?.date
+        });
+      } else if (app.status === 'rejected') {
+        notifications.push({
+          id: `rejected_${app._id}`,
+          type: 'application_rejected',
+          message: `Your application for "${app.opportunityId?.title || 'an event'}" was not accepted.`,
+          createdAt: app.updatedAt,
+          eventId: app.opportunityId?._id,
+          eventTitle: app.opportunityId?.title
+        });
+      } else if (app.status === 'pending') {
+        // Only show pending notifications for recent applications
+        const isRecent = (Date.now() - new Date(app.createdAt).getTime()) < 7 * 24 * 60 * 60 * 1000; // 7 days
+        if (isRecent) {
+          notifications.push({
+            id: `pending_${app._id}`,
+            type: 'application_pending',
+            message: `Your application for "${app.opportunityId?.title || 'an event'}" is under review.`,
+            createdAt: app.createdAt,
+            eventId: app.opportunityId?._id,
+            eventTitle: app.opportunityId?.title
+          });
+        }
+      }
+    });
+
+    // Add event reminders for upcoming accepted events
+    const upcomingAcceptedApps = applications.filter(app => 
+      app.status === 'accepted' && 
+      app.opportunityId?.date &&
+      new Date(app.opportunityId.date) > new Date() &&
+      (new Date(app.opportunityId.date) - new Date()) < 3 * 24 * 60 * 60 * 1000 // Within 3 days
+    );
+
+    upcomingAcceptedApps.forEach(app => {
+      const daysUntilEvent = Math.ceil((new Date(app.opportunityId.date) - new Date()) / (1000 * 60 * 60 * 24));
+      notifications.push({
+        id: `reminder_${app._id}`,
+        type: 'event_reminder',
+        message: `Reminder: "${app.opportunityId.title}" is in ${daysUntilEvent} day${daysUntilEvent === 1 ? '' : 's'}!`,
+        createdAt: new Date(Date.now() - (3 - daysUntilEvent) * 24 * 60 * 60 * 1000), // Simulate when reminder was created
+        eventId: app.opportunityId._id,
+        eventTitle: app.opportunityId.title,
+        eventDate: app.opportunityId.date
+      });
+    });
+
+    // Sort by most recent first
+    notifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.json({
+      success: true,
+      data: notifications.slice(0, 10) // Return only 10 most recent
+    });
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch notifications'
+    });
+  }
+};
+
 module.exports = {
   getAllOpportunities,
   getOpportunityById,
@@ -504,9 +799,11 @@ module.exports = {
   getMyApplications,
   withdrawApplication,
   getDashboardStats,
+  getAnalytics,
   getProfile,
   updateProfile,
   initiateEmailChange,
   verifyEmailChange,
-  resendEmailChangeOtp
+  resendEmailChangeOtp,
+  getNotifications
 };

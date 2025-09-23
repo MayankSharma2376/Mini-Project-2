@@ -15,7 +15,15 @@ const {
   getVolunteerDetails,
   sendMessageToVolunteer,
   getEventReport,
-  getVolunteerReport
+  getVolunteerReport,
+  // New attendance functions
+  getEventAttendance,
+  markAttendance,
+  markAllPresent,
+  exportAttendanceReport,
+  // Analytics functions
+  getAnalyticsData,
+  getVolunteerAnalytics
 } = require('../controllers/ngo.controller');
 
 const protectRoute = require('../middleware/protectRoute');
@@ -63,5 +71,15 @@ router.post('/volunteers/:volunteerId/message', sendMessageToVolunteer);
 // Reports routes
 router.get('/reports/event/:eventId', getEventReport);
 router.get('/reports/volunteers', getVolunteerReport);
+
+// Attendance management routes
+router.get('/events/:eventId/attendance', getEventAttendance);
+router.post('/events/:eventId/attendance/:volunteerId', markAttendance);
+router.post('/events/:eventId/attendance/mark-all-present', markAllPresent);
+router.get('/events/:eventId/attendance/export', exportAttendanceReport);
+
+// Analytics routes
+router.get('/analytics', protectRoute, getAnalyticsData);
+router.get('/analytics/volunteer/:volunteerId', protectRoute, getVolunteerAnalytics);
 
 module.exports = router;

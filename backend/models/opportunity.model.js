@@ -15,6 +15,52 @@ const opportunitySchema = new mongoose.Schema({
     type: String,
     required: true
   },
+
+  // Detailed location for matching
+  coordinates: {
+    latitude: {
+      type: Number,
+      min: -90,
+      max: 90
+    },
+    longitude: {
+      type: Number,
+      min: -180,
+      max: 180
+    }
+  },
+
+  // Waste types involved in this opportunity
+  wasteTypes: [{
+    type: String,
+    enum: [
+      'organic',
+      'plastic', 
+      'paper',
+      'glass',
+      'metal',
+      'electronic',
+      'hazardous',
+      'textile',
+      'construction',
+      'medical'
+    ],
+    required: true
+  }],
+
+  // Required experience level
+  requiredExperienceLevel: {
+    type: String,
+    enum: ['beginner', 'intermediate', 'advanced'],
+    default: 'beginner'
+  },
+
+  // Preferred time of day
+  timeOfDay: {
+    type: String,
+    enum: ['morning', 'afternoon', 'evening', 'full-day']
+  },
+
   date: {
     type: Date,
     required: true

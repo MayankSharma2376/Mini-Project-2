@@ -1,126 +1,83 @@
 import React, { useState } from 'react';
 
+// Using inline SVG for icons to remove external dependencies
+const PlusIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"></line>
+    <line x1="5" y1="12" x2="19" y2="12"></line>
+  </svg>
+);
+
+const MinusIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="5" y1="12" x2="19" y2="12"></line>
+  </svg>
+);
+
+
+// Data for the accordion to keep the component DRY
+const accordionData = [
+  {
+    id: 'programs',
+    title: 'Our Programs',
+    content: 'We run various community programs focused on education, waste reduction, and sustainable living practices to empower individuals to make a difference.',
+  },
+  {
+    id: 'services',
+    title: 'Our Services',
+    content: 'We offer a wide range of sustainable waste management services to keep your community green and clean, including residential and commercial solutions.',
+  },
+];
+
 const Mission = () => {
   const [openSection, setOpenSection] = useState(null);
 
-  const toggleSection = (section) => {
-    setOpenSection(openSection === section ? null : section);
-  };
-
-  const sectionStyle = {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    alignItems: 'stretch',
-    minHeight: '400px',
-  };
-
-  const textBoxStyle = {
-    backgroundColor: '#4b7255', // light green box
-    color: '#f5f5dc', // cream text
-    padding: '2rem',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-  };
-
-  const headingStyle = {
-    fontSize: '2rem',
-    marginBottom: '1rem',
-    fontWeight: '700',
-    color: '#f5f5dc',
-  };
-
-  const paraStyle = {
-    fontSize: '1rem',
-    lineHeight: '1.6',
-    marginBottom: '1.5rem',
-    color: '#f5f5dc',
-  };
-
-  const accordionItem = {
-    backgroundColor: '#3d5a40',
-    marginBottom: '0.8rem',
-    borderRadius: '6px',
-    overflow: 'hidden',
-    border: '1px solid #f5f5dc55',
-  };
-
-  const accordionHeader = {
-    padding: '0.8rem 1rem',
-    cursor: 'pointer',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    fontWeight: '600',
-    backgroundColor: '#2f4f39',
-    color: '#f5f5dc',
-  };
-
-  const accordionContent = {
-    padding: '1rem',
-    backgroundColor: '#4b7255',
-    fontSize: '0.95rem',
-    color: '#f5f5dc',
-    transition: 'max-height 0.3s ease',
+  // Toggles the accordion sections
+  const toggleSection = (sectionId) => {
+    setOpenSection(openSection === sectionId ? null : sectionId);
   };
 
   return (
-    <section style={sectionStyle}>
+    <section className="grid grid-cols-1 md:grid-cols-2">
       {/* Left Side: Image */}
-      <div>
+      <div className="min-h-[400px] md:min-h-0">
         <img
           src="/mission.jpg"
-          alt="Our Mission"
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          alt="Community members collaborating on a recycling project"
+          className="w-full h-full object-cover"
         />
       </div>
 
-      {/* Right Side: Text */}
-      <div style={textBoxStyle}>
-        <h2 style={headingStyle}>Our Mission</h2>
-        <p style={paraStyle}>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
-          tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
-          veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
-          commodo consequat. Duis aute irure dolor in reprehenderit in voluptate
-          velit esse cillum dolore.
+      {/* Right Side: Text and Accordion */}
+      <div className="bg-[#4b7255] text-[#f5f5dc] p-8 sm:p-12 flex flex-col justify-center">
+        <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Mission</h2>
+        <p className="text-base leading-relaxed mb-8">
+          To build a sustainable future by providing innovative and accessible recycling solutions. We are dedicated to educating communities, empowering individuals, and preserving our planet for generations to come through responsible waste management.
         </p>
 
         {/* Accordion Section */}
-        <div>
-          {/* Programs */}
-          <div style={accordionItem}>
-            <div
-              style={accordionHeader}
-              onClick={() => toggleSection('programs')}
-            >
-              <span>Programs</span>
-              <span>{openSection === 'programs' ? '-' : '+'}</span>
-            </div>
-            {openSection === 'programs' && (
-              <div style={accordionContent}>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-                eiusmod tempor incididunt ut labore et dolore magna aliqua.
+        <div className="space-y-3">
+          {accordionData.map((item) => (
+            <div key={item.id} className="bg-[#3d5a40] rounded-lg overflow-hidden border border-[#f5f5dc]/30">
+              {/* Accordion Header */}
+              <div
+                className="p-4 cursor-pointer flex justify-between items-center font-semibold bg-[#2f4f39]"
+                onClick={() => toggleSection(item.id)}
+              >
+                <span>{item.title}</span>
+                <span>
+                  {openSection === item.id ? <MinusIcon /> : <PlusIcon />}
+                </span>
               </div>
-            )}
-          </div>
 
-          {/* Services */}
-          <div style={accordionItem}>
-            <div
-              style={accordionHeader}
-              onClick={() => toggleSection('services')}
-            >
-              <span>Services</span>
-              <span>{openSection === 'services' ? '-' : '+'}</span>
+              {/* Accordion Content (conditionally rendered) */}
+              {openSection === item.id && (
+                <div className="p-4 bg-[#4b7255] text-sm text-white/90">
+                  {item.content}
+                </div>
+              )}
             </div>
-            {openSection === 'services' && (
-              <div style={accordionContent}>
-                We offer a wide range of sustainable waste management services to
-                keep your community green and clean.
-              </div>
-            )}
-          </div>
+          ))}
         </div>
       </div>
     </section>
@@ -128,3 +85,4 @@ const Mission = () => {
 };
 
 export default Mission;
+

@@ -1,120 +1,58 @@
 import React from 'react';
 
+// Data for the service cards to keep the component DRY and easy to update
+const servicesData = [
+  {
+    imgSrc: '/service1.jpg',
+    imgAlt: 'Service 1',
+    title: 'Heading 1',
+    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut',
+  },
+  {
+    imgSrc: '/service2.jpg',
+    imgAlt: 'Service 2',
+    title: 'Heading 2',
+    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut',
+  },
+  {
+    imgSrc: '/service3.jpg',
+    imgAlt: 'Service 3',
+    title: 'Heading 3',
+    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut',
+  },
+];
+
 const Services = () => {
-  const servicesStyle = {
-    backgroundColor: '#1a4d2c', // Dark green background
-    padding: '4rem 0',
-    color: '#fff',
-    fontFamily: '"Poppins", sans-serif' // clean modern font
-  };
-
-  const containerStyle = {
-    width: '90%',
-    maxWidth: '1200px',
-    margin: '0 auto',
-    textAlign: 'center'
-  };
-
-  const headingStyle = {
-    fontSize: '2.5rem',
-    marginBottom: '3rem',
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    color: '#f5f5dc' // cream shade for section heading
-  };
-
-  const gridStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-    gap: '2rem',
-    marginBottom: '3rem'
-  };
-
-  const itemStyle = {
-    backgroundColor: '#f5f5dc', // cream card background
-    padding: '2rem',
-    borderRadius: '15px',
-    textAlign: 'center',
-    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-    color: '#1a4d2c'
-  };
-
-  const imageStyle = {
-    width: '100%',
-    height: '200px',
-    objectFit: 'cover',
-    borderRadius: '10px',
-    marginBottom: '1.5rem'
-  };
-
-  const titleStyle = {
-    fontSize: '1.5rem',
-    marginBottom: '1rem',
-    color: '#1a4d2c', // dark green for titles
-    fontWeight: '600'
-  };
-
-  const textStyle = {
-    fontSize: '1rem',
-    lineHeight: '1.6',
-    marginBottom: '0',
-    color: '#333'
-  };
-
-  const buttonStyle = {
-    backgroundColor: '#a8e6cf', // light green accent
-    color: '#1a4d2c',
-    border: 'none',
-    padding: '1rem 2.5rem',
-    fontSize: '1.1rem',
-    fontWeight: '600',
-    borderRadius: '30px',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    fontFamily: '"Poppins", sans-serif'
-  };
-
   return (
-    <section className="services" style={servicesStyle}>
-      <div className="container" style={containerStyle}>
-        <h2 style={headingStyle}>Our Services</h2>
-        <div className="services-grid" style={gridStyle}>
-          <div className="service-item" style={itemStyle}>
-            <img src="/service1.jpg" alt="Service 1" style={imageStyle} />
-            <h3 style={titleStyle}>Heading 1</h3>
-            <p style={textStyle}>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-            </p>
-          </div>
-          <div className="service-item" style={itemStyle}>
-            <img src="/service2.jpg" alt="Service 2" style={imageStyle} />
-            <h3 style={titleStyle}>Heading 2</h3>
-            <p style={textStyle}>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-            </p>
-          </div>
-          <div className="service-item" style={itemStyle}>
-            <img src="/service3.jpg" alt="Service 3" style={imageStyle} />
-            <h3 style={titleStyle}>Heading 3</h3>
-            <p style={textStyle}>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-            </p>
-          </div>
+    <section className="bg-[#1a4d2c] text-white py-16 md:py-24">
+      <div className="container mx-auto px-4 text-center">
+        <h2 className="text-3xl md:text-4xl font-bold uppercase mb-12 md:mb-16 text-[#f5f5dc]">
+          Our Services
+        </h2>
+        
+        {/* Responsive Services Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12 md:mb-16">
+          {servicesData.map((service, index) => (
+            <div
+              key={index}
+              className="bg-[#f5f5dc] text-[#1a4d2c] p-8 rounded-2xl text-center transition-all duration-300 ease-in-out transform hover:-translate-y-2 hover:shadow-2xl"
+            >
+              <img
+                src={service.imgSrc}
+                alt={service.imgAlt}
+                className="w-full h-52 object-cover rounded-xl mb-6"
+              />
+              <h3 className="text-2xl font-semibold mb-4">{service.title}</h3>
+              <p className="text-gray-800 text-base leading-relaxed">
+                {service.description}
+              </p>
+            </div>
+          ))}
         </div>
+
+        {/* Call-to-Action Button */}
         <button
-          style={buttonStyle}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = '#fff';
-            e.target.style.color = '#1a4d2c';
-            e.target.style.transform = 'translateY(-3px)';
-            e.target.style.boxShadow = '0 4px 10px rgba(0,0,0,0.2)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = '#a8e6cf';
-            e.target.style.color = '#1a4d2c';
-            e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = 'none';
-          }}
+          className="bg-[#a8e6cf] text-[#1a4d2c] font-semibold text-lg py-4 px-10 rounded-full transition-all duration-300 ease-in-out transform hover:bg-white hover:-translate-y-1 hover:shadow-lg"
         >
           All Services
         </button>

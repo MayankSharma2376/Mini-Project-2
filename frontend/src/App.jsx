@@ -16,6 +16,7 @@ import Homepage from './pages/Homepage';
 import MessagePage from './pages/MessagePage';
 import MyProfile from './pages/MyProfile';
 import { NotificationProvider } from './contexts/NotificationContext';
+import AttendanceManager from './pages/AttendanceManager';
 
 function App() {
 
@@ -40,6 +41,7 @@ function App() {
               <Route path="message" element={<MessagePage />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="profile" element={<MyProfile />} />
+              <Route path="attendance" element={<AttendanceManager />} /> 
             </Route>
 
             {/* Volunteer Routes */}
@@ -55,8 +57,10 @@ function App() {
             <Route path="/ngo" element={<NGOLayout />}>
               <Route index element={<NGODashboard />} />
               <Route path="dashboard" element={<NGODashboard />} />
+              <Route path="message" element={<MessagePage />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="profile" element={<MyProfile />} />
+
             </Route>
 
             {/* Catch all route - redirect to home */}

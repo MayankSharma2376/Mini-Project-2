@@ -1,10 +1,31 @@
 const express = require("express");
 const protectRoute = require("../middleware/protectRoute.js");
-const { getUsersForSidebar } = require("../controllers/user.controller.js");
+const { 
+  getUsersForSidebar, 
+  getAdminAnalytics, 
+  getNGOAnalytics, 
+  getVolunteerAnalyticsForAdmin 
+} = require("../controllers/user.controller.js");
 
 const router = express.Router();
 
+// Middleware to check if user is admin
+const requireAdminRole = (req, res, next) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. Admin role required.'
+    });
+  }
+  next();
+};
+
 // This route will be protected, meaning you must be logged in to see other users
 router.get("/", protectRoute, getUsersForSidebar);
+
+// Admin analytics routes
+router.get("/admin/analytics", protectRoute, requireAdminRole, getAdminAnalytics);
+router.get("/admin/analytics/ngo/:ngoId", protectRoute, requireAdminRole, getNGOAnalytics);
+router.get("/admin/analytics/volunteer/:volunteerId", protectRoute, requireAdminRole, getVolunteerAnalyticsForAdmin);
 
 module.exports = router;
