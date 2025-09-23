@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, 
   MapPin, 
@@ -13,19 +14,28 @@ import {
   Award,
   Activity,
   Heart,
-  TrendingUp
+  TrendingUp,
+  Target,
+  Settings
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import StatCard from '../components/StatCard';
 import OpportunityCard from '../components/OpportunityCard';
 import RecentNotifications from '../components/RecentNotifications';
-import UpcomingPickups from '../components/UpcomingPickups';
+import UpcomingEvents from '../components/UpcomingPickups'; // Updated to use UpcomingEvents
+import MatchedOpportunities from '../components/MatchedOpportunities';
+import VolunteerPreferences from '../components/VolunteerPreferences';
 import { volunteerAPI } from '../services/api';
+import WasteZeroAnalytics from './AnalyticDashboard';
 
 export default function VolunteerDashboard() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [opportunities, setOpportunities] = useState([]);
   const [applications, setApplications] = useState([]);
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [user, setUser] = useState(null);
   const [stats, setStats] = useState({
     totalApplications: 0,
     acceptedApplications: 0,
@@ -33,6 +43,7 @@ export default function VolunteerDashboard() {
     upcomingEvents: 0
   });
   const [loading, setLoading] = useState(true);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [applyingTo, setApplyingTo] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
@@ -41,7 +52,18 @@ export default function VolunteerDashboard() {
   // Load dashboard data
   useEffect(() => {
     loadDashboardData();
+    loadUserData();
   }, []);
+
+  // Load user data for preferences
+  const loadUserData = async () => {
+    try {
+      const response = await volunteerAPI.getProfile();
+      setUser(response.data || response);
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
+  };
 
   // Refresh opportunities when switching to opportunities tab
   useEffect(() => {
@@ -55,24 +77,31 @@ export default function VolunteerDashboard() {
       setLoading(true);
       console.log('Loading volunteer dashboard data...');
       
-      const [statsResponse, opportunitiesResponse, applicationsResponse] = await Promise.all([
+      const [statsResponse, opportunitiesResponse, applicationsResponse, notificationsResponse] = await Promise.all([
         volunteerAPI.getDashboardStats(),
         volunteerAPI.getAllOpportunities(),
-        volunteerAPI.getMyApplications()
+        volunteerAPI.getMyApplications(),
+        volunteerAPI.getNotifications().catch(err => {
+          console.log('Notifications endpoint might not exist:', err);
+          return { data: [] }; // Fallback to empty array
+        })
       ]);
 
       console.log('Stats response:', statsResponse);
       console.log('Opportunities response:', opportunitiesResponse);
       console.log('Applications response:', applicationsResponse);
+      console.log('Notifications response:', notificationsResponse);
 
       // Extract data from API responses
       const statsData = statsResponse.data || statsResponse;
       const opportunitiesData = opportunitiesResponse.data || opportunitiesResponse;
       const applicationsData = applicationsResponse.data || applicationsResponse;
+      const notificationsData = notificationsResponse.data || [];
 
       console.log('Processed stats:', statsData);
       console.log('Processed opportunities:', opportunitiesData);
       console.log('Processed applications:', applicationsData);
+      console.log('Processed notifications:', notificationsData);
       
       // Debug: Check application structure
       if (applicationsData && applicationsData.length > 0) {
@@ -80,16 +109,32 @@ export default function VolunteerDashboard() {
         console.log('Sample application opportunityId:', applicationsData[0].opportunityId);
       }
 
+      // Extract upcoming events from accepted applications
+      const acceptedApplications = applicationsData.filter(app => 
+        app.status === 'accepted' && 
+        app.opportunityId && 
+        new Date(app.opportunityId.date) > new Date()
+      );
+      
+      const upcomingEventsData = acceptedApplications.map(app => ({
+        ...app.opportunityId,
+        applicationId: app._id,
+        applicationDate: app.createdAt
+      }));
+
       setStats({
         totalApplications: statsData.totalApplications || 0,
         acceptedApplications: statsData.acceptedApplications || 0,
         totalHoursVolunteered: statsData.totalHoursVolunteered || 0,
-        upcomingEvents: statsData.upcomingEvents || 0
+        upcomingEvents: upcomingEventsData.length
       });
       setOpportunities(opportunitiesData);
       setApplications(applicationsData);
+      setUpcomingEvents(upcomingEventsData);
+      setNotifications(notificationsData);
       
       console.log('Volunteer dashboard data loaded successfully');
+      console.log('Upcoming events:', upcomingEventsData);
     } catch (error) {
       console.error('Error loading volunteer dashboard data:', error);
       console.error('Error details:', {
@@ -100,6 +145,30 @@ export default function VolunteerDashboard() {
       toast.error(`Failed to load dashboard data: ${error.message}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handler functions for buttons
+  const handleViewAllEvents = () => {
+    setActiveTab('applications'); // Switch to applications tab to see all events
+  };
+
+  const handleViewAllNotifications = () => {
+    navigate('/volunteer/notifications');
+  };
+
+  // Function to refresh notifications
+  const refreshNotifications = async () => {
+    try {
+      setNotificationsLoading(true);
+      const notificationsResponse = await volunteerAPI.getNotifications();
+      const notificationsData = notificationsResponse.data || [];
+      setNotifications(notificationsData);
+    } catch (error) {
+      console.error('Error refreshing notifications:', error);
+      // Don't show error toast as this might be expected if endpoint doesn't exist
+    } finally {
+      setNotificationsLoading(false);
     }
   };
 
@@ -187,9 +256,12 @@ export default function VolunteerDashboard() {
             onClick={() => setActiveTab('opportunities')}
             className="p-4 text-left border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
           >
-            <Search className="h-8 w-8 text-green-600 mb-2" />
-            <h3 className="font-medium text-gray-900">Browse Opportunities</h3>
-            <p className="text-sm text-gray-500">Find new volunteer opportunities</p>
+            <div className="flex items-center mb-2">
+              <Search className="h-8 w-8 text-green-600" />
+              <Target className="h-4 w-4 text-green-500 ml-1" />
+            </div>
+            <h3 className="font-medium text-gray-900">Browse Smart Opportunities</h3>
+            <p className="text-sm text-gray-500">Matched opportunities appear first based on your preferences</p>
           </button>
           <button
             onClick={() => setActiveTab('applications')}
@@ -207,16 +279,46 @@ export default function VolunteerDashboard() {
         </div>
       </div>
 
-      {/* Recent Activity */}
+      {/* Recent Activity and Matched Opportunities */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <UpcomingPickups />
-        <RecentNotifications />
+        <MatchedOpportunities 
+          onApply={handleApplyForOpportunity}
+          loading={loading}
+        />
+        <div className="space-y-6">
+          <UpcomingEvents 
+            upcomingEvents={upcomingEvents}
+            loading={loading}
+            onViewAllEvents={handleViewAllEvents}
+          />
+          <RecentNotifications 
+            notifications={notifications}
+            loading={notificationsLoading || loading}
+            onViewAllNotifications={handleViewAllNotifications}
+          />
+        </div>
       </div>
     </div>
   );
 
   const renderOpportunitiesTab = () => (
     <div className="space-y-6">
+      {/* Header with explanation */}
+      <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4 border border-green-200">
+        <div className="flex items-center space-x-2 mb-2">
+          <Target className="h-5 w-5 text-green-600" />
+          <h3 className="text-lg font-semibold text-gray-900">Smart Matching Active</h3>
+        </div>
+        <p className="text-sm text-gray-700">
+          Opportunities that match your preferences (location, waste types, skills) appear first with 
+          <span className="inline-flex items-center mx-1 px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded">
+            <Star className="h-3 w-3 mr-1" />
+            RECOMMENDED
+          </span>
+          badges. Update your preferences for better matches!
+        </p>
+      </div>
+
       {/* Search and Filter */}
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex flex-col md:flex-row gap-4">
@@ -253,7 +355,24 @@ export default function VolunteerDashboard() {
       {/* Opportunities Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredOpportunities.map(opportunity => (
-          <div key={opportunity._id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div key={opportunity._id} className={`bg-white rounded-lg shadow-sm border overflow-hidden transition-all hover:shadow-md ${
+            opportunity.isMatched ? 'border-green-300 ring-2 ring-green-100' : 'border-gray-200'
+          }`}>
+            {/* Match Score Badge */}
+            {opportunity.isMatched && (
+              <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold flex items-center">
+                    <Star className="h-3 w-3 mr-1" />
+                    RECOMMENDED FOR YOU
+                  </span>
+                  <span className="text-xs font-bold bg-white bg-opacity-20 px-2 py-1 rounded-full">
+                    {opportunity.matchScore}% match
+                  </span>
+                </div>
+              </div>
+            )}
+            
             {/* Event Image */}
             {opportunity.image && (
               <div className="h-48 w-full cursor-pointer" onClick={() => setEnlargedImage(opportunity.image)}>
@@ -274,12 +393,39 @@ export default function VolunteerDashboard() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">{opportunity.title}</h3>
                   <p className="text-sm text-gray-600 mb-3 line-clamp-2">{opportunity.description}</p>
                 </div>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                  opportunity.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
-                  {opportunity.status}
-                </span>
+                <div className="flex flex-col items-end space-y-1">
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                    opportunity.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {opportunity.status}
+                  </span>
+                  {opportunity.isMatched && (
+                    <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full flex items-center">
+                      <Target className="h-3 w-3 mr-1" />
+                      Match
+                    </span>
+                  )}
+                </div>
               </div>
+
+              {/* Waste Types for matched opportunities */}
+              {opportunity.isMatched && opportunity.wasteTypes && opportunity.wasteTypes.length > 0 && (
+                <div className="mb-3">
+                  <div className="flex flex-wrap gap-1">
+                    {opportunity.wasteTypes.slice(0, 3).map((wasteType, index) => (
+                      <span 
+                        key={index}
+                        className="inline-flex items-center px-2 py-1 text-xs bg-green-100 text-green-800 rounded"
+                      >
+                        {wasteType}
+                      </span>
+                    ))}
+                    {opportunity.wasteTypes.length > 3 && (
+                      <span className="text-xs text-gray-500">+{opportunity.wasteTypes.length - 3} more</span>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2 mb-4">
                 <div className="flex items-center text-sm text-gray-500">
@@ -296,10 +442,44 @@ export default function VolunteerDashboard() {
                 </div>
               </div>
 
+              {/* Match breakdown for matched opportunities */}
+              {opportunity.isMatched && opportunity.matchReasons && (
+                <div className="mb-4 p-3 bg-green-50 rounded-lg">
+                  <h4 className="text-xs font-semibold text-green-800 mb-2">Why this matches you:</h4>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="flex items-center">
+                      <div className="w-8 bg-gray-200 rounded-full h-1 mr-2">
+                        <div 
+                          className="bg-green-500 h-1 rounded-full" 
+                          style={{ width: `${opportunity.matchReasons.location}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-gray-600">Location {opportunity.matchReasons.location}%</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-8 bg-gray-200 rounded-full h-1 mr-2">
+                        <div 
+                          className="bg-blue-500 h-1 rounded-full" 
+                          style={{ width: `${opportunity.matchReasons.wasteTypes}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-gray-600">Interest {opportunity.matchReasons.wasteTypes}%</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center justify-between">
-                <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                  {opportunity.category}
-                </span>
+                <div className="flex items-center space-x-2">
+                  <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                    {opportunity.category}
+                  </span>
+                  {opportunity.requiredExperienceLevel && (
+                    <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">
+                      {opportunity.requiredExperienceLevel}
+                    </span>
+                  )}
+                </div>
                 {(() => {
                   const application = applications.find(app => {
                     // Handle both populated and non-populated opportunityId
@@ -510,6 +690,26 @@ export default function VolunteerDashboard() {
                 >
                   My Applications
                 </button>
+                <button
+                  onClick={() => setActiveTab('analytics')}
+                  className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    activeTab === 'analytics'
+                      ? 'bg-green-600 text-white'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  My Analytics
+                </button>
+                <button
+                  onClick={() => setActiveTab('preferences')}
+                  className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    activeTab === 'preferences'
+                      ? 'bg-green-600 text-white'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Preferences
+                </button>
               </div>
             </div>
           </div>
@@ -518,6 +718,18 @@ export default function VolunteerDashboard() {
           {activeTab === 'dashboard' && renderDashboardTab()}
           {activeTab === 'opportunities' && renderOpportunitiesTab()}
           {activeTab === 'applications' && renderApplicationsTab()}
+          {activeTab === 'analytics' && (
+            <WasteZeroAnalytics userRole="volunteer" />
+          )}
+          {activeTab === 'preferences' && (
+            <VolunteerPreferences 
+              user={user}
+              onUpdate={() => {
+                loadUserData();
+                loadDashboardData();
+              }}
+            />
+          )}
         </main>
       </div>
       

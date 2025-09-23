@@ -61,7 +61,9 @@ const MyProfile = () => {
           setProfile(profileData);
           // Store originals
           setOriginalName(profileData.name || '');
+          // setOriginalName('John Doe');
           setOriginalEmail(profileData.email || '');
+          // setOriginalEmail('johndoe@gmail.com');
           setOriginalLocation(profileData.location || '');
           setOriginalBio(profileData.bio || '');
           setOriginalSkills(Array.isArray(profileData.skills) ? profileData.skills : []);
@@ -79,7 +81,7 @@ const MyProfile = () => {
           setOpportunities([]);
         }
       } catch (e) {
-        const fallback = { name: 'John Doe', email: 'email@example.com' };
+        const fallback = { name: 'John Doe', email: 'johndoe@example.com' };
         setProfile(fallback);
         setFullName(fallback.name);
         setEmail(fallback.email);
@@ -563,7 +565,7 @@ const MyProfile = () => {
       <div className="space-y-6 max-w-5xl">
         <div>
           <label className="block text-sm font-semibold mb-1 text-gray-800">Full Name</label>
-      <input type="text" className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={originalName || 'Full Name'} />
+      <input type="text" className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder='John Doe' />
         </div>
         <div>
           <label className="block text-sm font-semibold mb-1 text-gray-800">Email</label>
@@ -573,7 +575,7 @@ const MyProfile = () => {
         value={email}
         onChange={(e)=> setEmail(e.target.value)}
               className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-        placeholder={originalEmail || 'you@example.com'}
+        placeholder={'johndoe@example.com'}
             />
             {email && email !== originalEmail && (
               <button

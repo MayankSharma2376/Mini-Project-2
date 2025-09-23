@@ -9,11 +9,13 @@ const {
   getMyApplications,
   withdrawApplication,
   getDashboardStats,
+  getAnalytics,
   getProfile,
   updateProfile,
   initiateEmailChange,
   verifyEmailChange,
-  resendEmailChangeOtp
+  resendEmailChangeOtp,
+  getNotifications
 } = require('../controllers/volunteer.controller');
 
 // Enforce real authentication (JWT via cookie). No fallback user so each session is distinct.
@@ -21,6 +23,9 @@ router.use(protectRoute);
 
 // Dashboard route
 router.get('/dashboard-stats', getDashboardStats);
+
+// Analytics route
+router.get('/analytics', getAnalytics);
 
 // Profile routes
 router.get('/profile', getProfile);
@@ -37,5 +42,8 @@ router.post('/opportunities/:opportunityId/apply', applyForOpportunity);
 // Application management routes
 router.get('/applications', getMyApplications);
 router.put('/applications/:applicationId/withdraw', withdrawApplication);
+
+// Notifications route
+router.get('/notifications', getNotifications);
 
 module.exports = router;

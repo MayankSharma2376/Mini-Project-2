@@ -32,6 +32,8 @@ import { ngoAPI } from '../services/api'
 import { toast } from 'react-toastify'
 import Navbar from '../components/Navbar'
 import Side from '../components/Side'
+import AttendanceManager from './AttendanceManager'
+import WasteZeroAnalytics from './AnalyticDashboard'
 
 // Modern CreateEventModal component with enhanced UI
 const CreateEventModal = memo(({ 
@@ -74,6 +76,14 @@ const CreateEventModal = memo(({
     handleNewEventChange('requiredSkills', updatedSkills);
   };
 
+  const handleWasteTypeToggle = (wasteType) => {
+    const currentWasteTypes = newEvent.wasteTypes || [];
+    const updatedWasteTypes = currentWasteTypes.includes(wasteType)
+      ? currentWasteTypes.filter(w => w !== wasteType)
+      : [...currentWasteTypes, wasteType];
+    handleNewEventChange('wasteTypes', updatedWasteTypes);
+  };
+
   const availableSkills = [
     'Environmental Conservation',
     'Community Organizing',
@@ -89,103 +99,78 @@ const CreateEventModal = memo(({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div className="bg-white rounded-3xl max-w-5xl w-full max-h-[95vh] overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-100 p-6 rounded-t-3xl">
+        <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-6">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-2xl font-bold text-gray-900">Create New Event</h3>
-              <p className="text-gray-500 mt-1">Organize impactful community events</p>
+              <h3 className="text-3xl font-bold">Create New Event</h3>
+              <p className="text-green-100 mt-1">Organize impactful community events for waste management</p>
             </div>
             <button
               onClick={() => setShowModal(false)}
-              className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
             >
-              <X className="w-6 h-6 text-gray-500" />
+              <X className="w-6 h-6" />
             </button>
           </div>
         </div>
 
-        <div className="p-6">
-          {/* Image Upload Section */}
-          <div className="mb-8">
-            <label className="block text-sm font-semibold text-gray-800 mb-3">
-              Event Banner Image
-            </label>
-            {!newEvent.imagePreview ? (
-              <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-blue-400 transition-colors">
-                <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-                    <Upload className="w-8 h-8 text-blue-600" />
-                  </div>
-                  <h4 className="text-lg font-semibold text-gray-700 mb-2">Upload Event Image</h4>
-                  <p className="text-gray-500 mb-4">Drag and drop or click to browse</p>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                    id="image-upload"
-                  />
-                  <label
-                    htmlFor="image-upload"
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl cursor-pointer transition-colors font-medium"
-                  >
-                    Choose Image
+        <div className="overflow-y-auto max-h-[calc(95vh-120px)]">
+          <div className="p-6 space-y-8">
+            {/* Progress Indicator */}
+            <div className="flex items-center justify-center space-x-2 mb-6">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-semibold">1</div>
+                <span className="text-sm font-medium text-gray-700">Basic Info</span>
+              </div>
+              <div className="w-8 h-0.5 bg-gray-300"></div>
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-semibold">2</div>
+                <span className="text-sm font-medium text-gray-700">Preferences</span>
+              </div>
+              <div className="w-8 h-0.5 bg-gray-300"></div>
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-semibold">3</div>
+                <span className="text-sm font-medium text-gray-700">Review</span>
+              </div>
+            </div>
+
+            {/* Step 1: Basic Event Information */}
+            <div className="bg-gray-50 rounded-2xl p-6">
+              <h4 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-semibold mr-3">1</div>
+                Basic Event Information
+              </h4>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">
+                    Event Title *
                   </label>
-                  <p className="text-xs text-gray-400 mt-2">PNG, JPG up to 5MB</p>
+                  <input
+                    type="text"
+                    value={newEvent.title}
+                    onChange={(e) => handleNewEventChange('title', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    placeholder="Enter an engaging event title"
+                  />
                 </div>
-              </div>
-            ) : (
-              <div className="relative rounded-2xl overflow-hidden">
-                <img
-                  src={newEvent.imagePreview}
-                  alt="Event preview"
-                  className="w-full h-48 object-cover"
-                />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={removeImage}
-                    className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-full transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">
+                    Location *
+                  </label>
+                  <input
+                    type="text"
+                    value={newEvent.location}
+                    onChange={(e) => handleNewEventChange('location', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    placeholder="City, address, or landmark (e.g., Mumbai, Delhi, etc.)"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">We'll automatically determine coordinates for matching</p>
                 </div>
-              </div>
-            )}
-          </div>
 
-          {/* Form Fields */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Column */}
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-2">
-                  Event Title *
-                </label>
-                <input
-                  type="text"
-                  value={newEvent.title}
-                  onChange={(e) => handleNewEventChange('title', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="Enter an engaging event title"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-2">
-                  Location *
-                </label>
-                <input
-                  type="text"
-                  value={newEvent.location}
-                  onChange={(e) => handleNewEventChange('location', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="Event venue or address"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-2">
                     Event Date *
@@ -194,10 +179,11 @@ const CreateEventModal = memo(({
                     type="date"
                     value={newEvent.date}
                     onChange={(e) => handleNewEventChange('date', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     min={new Date().toISOString().split('T')[0]}
                   />
                 </div>
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-2">
                     Duration
@@ -206,13 +192,11 @@ const CreateEventModal = memo(({
                     type="text"
                     value={newEvent.duration}
                     onChange={(e) => handleNewEventChange('duration', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="e.g., 4 hours"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    placeholder="e.g., 4 hours, Half day, Full day"
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-2">
                     Capacity *
@@ -222,10 +206,11 @@ const CreateEventModal = memo(({
                     value={newEvent.capacity}
                     onChange={(e) => handleNewEventChange('capacity', e.target.value)}
                     min="1"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="Max participants"
                   />
                 </div>
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-2">
                     Category
@@ -233,7 +218,7 @@ const CreateEventModal = memo(({
                   <select
                     value={newEvent.category}
                     onChange={(e) => handleNewEventChange('category', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                   >
                     <option value="environmental">Environmental</option>
                     <option value="social">Social</option>
@@ -244,23 +229,7 @@ const CreateEventModal = memo(({
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-2">
-                  Application Deadline
-                </label>
-                <input
-                  type="date"
-                  value={newEvent.applicationDeadline}
-                  onChange={(e) => handleNewEventChange('applicationDeadline', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  min={new Date().toISOString().split('T')[0]}
-                />
-              </div>
-            </div>
-
-            {/* Right Column */}
-            <div className="space-y-6">
-              <div>
+              <div className="mt-6">
                 <label className="block text-sm font-semibold text-gray-800 mb-2">
                   Description *
                 </label>
@@ -268,46 +237,208 @@ const CreateEventModal = memo(({
                   value={newEvent.description}
                   onChange={(e) => handleNewEventChange('description', e.target.value)}
                   rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
                   placeholder="Describe your event, its goals, and what volunteers will do..."
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-3">
-                  Required Skills
+              <div className="mt-6">
+                <label className="block text-sm font-semibold text-gray-800 mb-2">
+                  Application Deadline
                 </label>
-                <div className="bg-gray-50 rounded-xl p-4 max-h-40 overflow-y-auto">
-                  <div className="grid grid-cols-2 gap-2">
-                    {availableSkills.map((skill) => (
-                      <label
-                        key={skill}
-                        className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-white transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={newEvent.requiredSkills?.includes(skill) || false}
-                          onChange={() => handleSkillToggle(skill)}
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-700">{skill}</span>
-                      </label>
-                    ))}
+                <input
+                  type="date"
+                  value={newEvent.applicationDeadline}
+                  onChange={(e) => handleNewEventChange('applicationDeadline', e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                  min={new Date().toISOString().split('T')[0]}
+                  max={newEvent.date ? new Date(new Date(newEvent.date).getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined}
+                />
+                {newEvent.date && newEvent.applicationDeadline && new Date(newEvent.applicationDeadline) >= new Date(newEvent.date) && (
+                  <p className="text-red-500 text-sm mt-1">Application deadline must be before the event date</p>
+                )}
+              </div>
+            </div>
+
+            {/* Step 2: Matching Preferences */}
+            <div className="bg-green-50 rounded-2xl p-6">
+              <h4 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-semibold mr-3">2</div>
+                Smart Matching Preferences
+              </h4>
+              <p className="text-gray-600 mb-6">These details help us match your event with the most suitable volunteers</p>
+              
+              <div className="space-y-6">
+                {/* Waste Types */}
+                <div>
+                  <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
+                    <span>Waste Types Involved *</span>
+                    <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Required for matching</span>
+                  </label>
+                  <div className="bg-white rounded-xl p-4 border border-gray-200">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                      {[
+                        { value: 'organic', label: 'Organic', emoji: '🥬' },
+                        { value: 'plastic', label: 'Plastic', emoji: '🥤' },
+                        { value: 'paper', label: 'Paper', emoji: '📄' },
+                        { value: 'glass', label: 'Glass', emoji: '🍶' },
+                        { value: 'metal', label: 'Metal', emoji: '🔧' },
+                        { value: 'electronic', label: 'Electronic', emoji: '📱' },
+                        { value: 'hazardous', label: 'Hazardous', emoji: '⚠️' },
+                        { value: 'textile', label: 'Textile', emoji: '👕' },
+                        { value: 'construction', label: 'Construction', emoji: '🧱' },
+                        { value: 'medical', label: 'Medical', emoji: '💉' }
+                      ].map((wasteType) => (
+                        <label
+                          key={wasteType.value}
+                          className={`flex items-center space-x-2 cursor-pointer p-3 rounded-lg border-2 transition-all ${
+                            newEvent.wasteTypes?.includes(wasteType.value)
+                              ? 'border-green-500 bg-green-50 text-green-700'
+                              : 'border-gray-200 hover:border-green-300 hover:bg-green-50'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={newEvent.wasteTypes?.includes(wasteType.value) || false}
+                            onChange={() => handleWasteTypeToggle(wasteType.value)}
+                            className="hidden"
+                          />
+                          <span className="text-lg">{wasteType.emoji}</span>
+                          <span className="text-sm font-medium">{wasteType.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Experience Level and Time */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Required Experience Level
+                    </label>
+                    <select
+                      value={newEvent.requiredExperienceLevel}
+                      onChange={(e) => handleNewEventChange('requiredExperienceLevel', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    >
+                      <option value="beginner">🌱 Beginner - No prior experience needed</option>
+                      <option value="intermediate">🌿 Intermediate - Some experience preferred</option>
+                      <option value="advanced">🌳 Advanced - Experienced volunteers only</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Preferred Time of Day
+                    </label>
+                    <select
+                      value={newEvent.timeOfDay}
+                      onChange={(e) => handleNewEventChange('timeOfDay', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    >
+                      <option value="morning">🌅 Morning (6 AM - 12 PM)</option>
+                      <option value="afternoon">☀️ Afternoon (12 PM - 6 PM)</option>
+                      <option value="evening">🌆 Evening (6 PM - 10 PM)</option>
+                      <option value="full-day">🌍 Full Day (All day event)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Skills */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-3">
+                    Required Skills (Optional)
+                  </label>
+                  <div className="bg-white rounded-xl p-4 border border-gray-200">
+                    <div className="grid grid-cols-2 gap-2">
+                      {availableSkills.map((skill) => (
+                        <label
+                          key={skill}
+                          className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={newEvent.requiredSkills?.includes(skill) || false}
+                            onChange={() => handleSkillToggle(skill)}
+                            className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                          />
+                          <span className="text-sm text-gray-700">{skill}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Tips Section */}
-              <div className="bg-blue-50 rounded-xl p-4">
-                <div className="flex items-start space-x-3">
-                  <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
-                  <div>
-                    <h4 className="font-semibold text-blue-900 mb-1">Tips for Success</h4>
-                    <ul className="text-sm text-blue-800 space-y-1">
+            {/* Step 3: Event Image */}
+            <div className="bg-blue-50 rounded-2xl p-6">
+              <h4 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-semibold mr-3">3</div>
+                Event Banner Image
+              </h4>
+              
+              {!newEvent.imagePreview ? (
+                <div className="border-2 border-dashed border-blue-300 rounded-2xl p-8 text-center hover:border-blue-400 transition-colors bg-white">
+                  <div className="flex flex-col items-center">
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                      <Upload className="w-8 h-8 text-blue-600" />
+                    </div>
+                    <h4 className="text-lg font-semibold text-gray-700 mb-2">Upload Event Image</h4>
+                    <p className="text-gray-500 mb-4">Add an engaging image to attract more volunteers</p>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="image-upload"
+                    />
+                    <label
+                      htmlFor="image-upload"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl cursor-pointer transition-colors font-medium"
+                    >
+                      Choose Image
+                    </label>
+                    <p className="text-xs text-gray-400 mt-2">PNG, JPG up to 5MB</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="relative rounded-2xl overflow-hidden bg-white border border-blue-200">
+                  <img
+                    src={newEvent.imagePreview}
+                    alt="Event preview"
+                    className="w-full h-48 object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={removeImage}
+                      className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-full transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Tips Section */}
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-6">
+              <div className="flex items-start space-x-3">
+                <AlertCircle className="w-6 h-6 text-green-600 mt-0.5" />
+                <div>
+                  <h4 className="font-bold text-gray-900 mb-2">💡 Tips for a Successful Event</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ul className="text-sm text-gray-700 space-y-1">
                       <li>• Use clear, action-oriented titles</li>
                       <li>• Include specific location details</li>
                       <li>• Add an engaging banner image</li>
                       <li>• Specify required skills honestly</li>
+                    </ul>
+                    <ul className="text-sm text-gray-700 space-y-1">
+                      <li>• Select relevant waste types for better matching</li>
+                      <li>• Set realistic capacity and duration</li>
+                      <li>• Provide clear event descriptions</li>
+                      <li>• Consider volunteer experience levels</li>
                     </ul>
                   </div>
                 </div>
@@ -316,30 +447,37 @@ const CreateEventModal = memo(({
           </div>
 
           {/* Footer */}
-          <div className="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-100">
-            <button
-              onClick={() => setShowModal(false)}
-              className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleCreateEvent}
-              disabled={loading}
-              className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 transition-all font-medium shadow-lg flex items-center space-x-2"
-            >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Creating...</span>
-                </>
-              ) : (
-                <>
-                  <Calendar className="w-4 h-4" />
-                  <span>Create Event</span>
-                </>
-              )}
-            </button>
+          <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-gray-600">
+                📍 Events with waste types get better volunteer matches
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="px-6 py-3 text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateEvent}
+                  disabled={loading}
+                  className="px-8 py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-xl hover:from-green-700 hover:to-blue-700 disabled:opacity-50 transition-all font-medium shadow-lg flex items-center space-x-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Creating Event...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Calendar className="w-4 h-4" />
+                      <span>Create Event</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -470,7 +608,11 @@ const EditEventModal = memo(({
                 onChange={(e) => handleEditEventChange('applicationDeadline', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 min={new Date().toISOString().split('T')[0]}
+                max={editEvent.date ? new Date(new Date(editEvent.date).getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined}
               />
+              {editEvent.date && editEvent.applicationDeadline && new Date(editEvent.applicationDeadline) >= new Date(editEvent.date) && (
+                <p className="text-red-500 text-sm mt-1">Application deadline must be before the event date</p>
+              )}
             </div>
           </div>
 
@@ -910,7 +1052,11 @@ const NGODashboard = () => {
   const [error, setError] = useState(null)
   const [showCreateEventModal, setShowCreateEventModal] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-  const [activeTab, setActiveTab] = useState('dashboard') // dashboard, events, volunteers
+  const [activeTab, setActiveTab] = useState('dashboard') // dashboard, events, volunteers, attendance, analytics
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false)
+  const [selectedEventForAttendance, setSelectedEventForAttendance] = useState(null)
+  const [recentActivities, setRecentActivities] = useState([])
+  const [activitiesLoading, setActivitiesLoading] = useState(false)
 
   // Check if mobile screen size
   useEffect(() => {
@@ -975,7 +1121,14 @@ const NGODashboard = () => {
     imagePreview: null,
     duration: '',
     requiredSkills: [],
-    applicationDeadline: ''
+    applicationDeadline: '',
+    wasteTypes: [],
+    requiredExperienceLevel: 'beginner',
+    timeOfDay: 'morning',
+    coordinates: {
+      latitude: null,
+      longitude: null
+    }
   })
 
   // Edit Event State
@@ -1134,6 +1287,65 @@ const NGODashboard = () => {
     }
   ]);
 
+  // Helper function to get icon component for activity type
+  const getActivityIcon = (iconType) => {
+    const iconProps = { className: "w-5 h-5 mr-3" };
+    
+    switch (iconType) {
+      case 'user-check':
+        return <UserCheck {...iconProps} className="w-5 h-5 mr-3 text-green-500" />;
+      case 'calendar':
+        return <Calendar {...iconProps} className="w-5 h-5 mr-3 text-blue-500" />;
+      case 'calendar-plus':
+        return <Plus {...iconProps} className="w-5 h-5 mr-3 text-purple-500" />;
+      case 'check-circle':
+        return <CheckCircle {...iconProps} className="w-5 h-5 mr-3 text-green-600" />;
+      case 'heart':
+        return <Heart {...iconProps} className="w-5 h-5 mr-3 text-red-500" />;
+      case 'edit':
+        return <Edit {...iconProps} className="w-5 h-5 mr-3 text-orange-500" />;
+      default:
+        return <Activity {...iconProps} className="w-5 h-5 mr-3 text-gray-500" />;
+    }
+  };
+
+  // Helper function to format time ago
+  const formatTimeAgo = (timestamp) => {
+    const now = new Date();
+    const activityTime = new Date(timestamp);
+    const diffInMs = now - activityTime;
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInHours < 1) {
+      const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+      return diffInMinutes <= 1 ? 'Just now' : `${diffInMinutes} minutes ago`;
+    } else if (diffInHours < 24) {
+      return diffInHours === 1 ? '1 hour ago' : `${diffInHours} hours ago`;
+    } else if (diffInDays === 1) {
+      return '1 day ago';
+    } else if (diffInDays < 7) {
+      return `${diffInDays} days ago`;
+    } else {
+      return activityTime.toLocaleDateString();
+    }
+  };
+
+  // Helper function to reload just recent activities
+  const refreshRecentActivities = async () => {
+    try {
+      setActivitiesLoading(true);
+      const activitiesResponse = await ngoAPI.getRecentActivities();
+      const activitiesData = activitiesResponse.data || [];
+      setRecentActivities(activitiesData);
+    } catch (error) {
+      console.error('Error refreshing activities:', error);
+      toast.error('Failed to refresh activities');
+    } finally {
+      setActivitiesLoading(false);
+    }
+  };
+
   // Load dashboard data
   useEffect(() => {
     loadDashboardData();
@@ -1144,20 +1356,27 @@ const NGODashboard = () => {
       setLoading(true);
       console.log('Loading dashboard data...');
       
-      const [statsResponse, eventsResponse] = await Promise.all([
+      const [statsResponse, eventsResponse, activitiesResponse] = await Promise.all([
         ngoAPI.getDashboardStats(),
-        ngoAPI.getMyEvents()
+        ngoAPI.getMyEvents(),
+        ngoAPI.getRecentActivities()
       ]);
 
       console.log('Stats response:', statsResponse);
       console.log('Events response:', eventsResponse);
+      console.log('Activities response:', activitiesResponse);
 
       // Extract data from API response
       const statsData = statsResponse.data || statsResponse;
       const eventsData = eventsResponse.data || eventsResponse;
+      const activitiesData = activitiesResponse.data || [];
 
       console.log('Processed stats data:', statsData);
       console.log('Processed events data:', eventsData);
+      console.log('Processed activities data:', activitiesData);
+
+      // Set recent activities
+      setRecentActivities(activitiesData);
 
       setStats([
         {
@@ -1221,6 +1440,20 @@ const NGODashboard = () => {
       return
     }
 
+    // Validate waste types
+    if (!newEvent.wasteTypes || newEvent.wasteTypes.length === 0) {
+      toast.error('Please select at least one waste type')
+      return
+    }
+
+    // Validate application deadline
+    if (newEvent.applicationDeadline && newEvent.date) {
+      if (new Date(newEvent.applicationDeadline) >= new Date(newEvent.date)) {
+        toast.error('Application deadline must be before the event date')
+        return
+      }
+    }
+
     try {
       setLoading(true)
       const eventData = {
@@ -1251,7 +1484,14 @@ const NGODashboard = () => {
         imagePreview: null,
         duration: '',
         requiredSkills: [],
-        applicationDeadline: ''
+        applicationDeadline: '',
+        wasteTypes: [],
+        requiredExperienceLevel: 'beginner',
+        timeOfDay: 'morning',
+        coordinates: {
+          latitude: null,
+          longitude: null
+        }
       })
       setShowCreateEventModal(false)
       toast.success('Event created successfully!')
@@ -1289,6 +1529,14 @@ const NGODashboard = () => {
         !editEvent.date || !editEvent.capacity) {
       toast.error('Please fill in all required fields')
       return
+    }
+
+    // Validate application deadline
+    if (editEvent.applicationDeadline && editEvent.date) {
+      if (new Date(editEvent.applicationDeadline) >= new Date(editEvent.date)) {
+        toast.error('Application deadline must be before the event date')
+        return
+      }
     }
 
     try {
@@ -1538,30 +1786,63 @@ const NGODashboard = () => {
 
       {/* Recent Activity */}
       <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h3>
-        <div className="space-y-3">
-          <div className="flex items-center p-3 bg-gray-50 rounded-lg">
-            <UserCheck className="w-5 h-5 text-green-500 mr-3" />
-            <div>
-              <p className="text-sm text-gray-800">New volunteer registered for River Cleanup Drive</p>
-              <p className="text-xs text-gray-500">2 hours ago</p>
-            </div>
-          </div>
-          <div className="flex items-center p-3 bg-gray-50 rounded-lg">
-            <Calendar className="w-5 h-5 text-blue-500 mr-3" />
-            <div>
-              <p className="text-sm text-gray-800">Recycling Workshop event updated</p>
-              <p className="text-xs text-gray-500">5 hours ago</p>
-            </div>
-          </div>
-          <div className="flex items-center p-3 bg-gray-50 rounded-lg">
-            <Heart className="w-5 h-5 text-red-500 mr-3" />
-            <div>
-              <p className="text-sm text-gray-800">Community Garden Project received positive feedback</p>
-              <p className="text-xs text-gray-500">1 day ago</p>
-            </div>
-          </div>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-800">Recent Activity</h3>
+          <button
+            onClick={refreshRecentActivities}
+            disabled={activitiesLoading}
+            className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
+            title="Refresh activities"
+          >
+            <RefreshCw className={`w-4 h-4 ${activitiesLoading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
+        {activitiesLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
+            <span className="ml-2 text-gray-600">Loading activities...</span>
+          </div>
+        ) : recentActivities.length > 0 ? (
+          <div className="space-y-3">
+            {recentActivities.map((activity) => (
+              <div key={activity.id} className="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                {getActivityIcon(activity.icon)}
+                <div className="flex-1">
+                  <p className="text-sm text-gray-800">{activity.message}</p>
+                  <p className="text-xs text-gray-500">{formatTimeAgo(activity.timestamp)}</p>
+                  {activity.details && (
+                    <div className="text-xs text-gray-400 mt-1">
+                      {activity.details.category && (
+                        <span className="inline-block bg-gray-200 text-gray-700 px-2 py-1 rounded-full mr-2">
+                          {activity.details.category}
+                        </span>
+                      )}
+                      {activity.details.location && (
+                        <span className="text-gray-500"> {activity.details.location}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {activity.status && (
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                    activity.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                    activity.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    activity.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {activity.status}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <Activity className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+            <p className="text-gray-500 text-sm">No recent activities</p>
+            <p className="text-xs text-gray-400">Activities will appear here as they happen</p>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -1873,6 +2154,77 @@ const NGODashboard = () => {
     </div>
   )
 
+  // Attendance Tab Render Function
+  const renderAttendanceTab = () => (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <UserCheck className="w-7 h-7 text-green-600" />
+              Event Attendance Management
+            </h2>
+            <p className="text-gray-600 mt-1">Manage volunteer attendance for your events</p>
+          </div>
+        </div>
+
+        {/* Event Selection Grid */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {events.filter(event => event.status === 'active').map(event => (
+            <div key={event.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-green-300 transition-colors">
+              <div className="flex items-start justify-between mb-3">
+                <h3 className="font-semibold text-gray-900 text-lg">{event.title}</h3>
+                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                  Active
+                </span>
+              </div>
+              
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center text-sm text-gray-600">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  {new Date(event.date).toLocaleDateString()}
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <MapPin className="w-4 h-4 mr-2" />
+                  {event.location}
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <Users className="w-4 h-4 mr-2" />
+                  {event.registered} registered volunteers
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setSelectedEventForAttendance(event.id);
+                  setShowAttendanceModal(true);
+                }}
+                className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center gap-2"
+              >
+                <UserCheck className="w-4 h-4" />
+                Manage Attendance
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {events.filter(event => event.status === 'active').length === 0 && (
+          <div className="text-center py-12">
+            <UserCheck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Events</h3>
+            <p className="text-gray-500">Create an event to start managing volunteer attendance</p>
+            <button
+              onClick={() => setShowCreateEventModal(true)}
+              className="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium"
+            >
+              Create Event
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -1925,7 +2277,9 @@ const NGODashboard = () => {
                 {[
                   { id: 'dashboard', label: 'Overview', icon: BarChart3, hideOnMobile: false },
                   { id: 'events', label: 'My Events', icon: Calendar, hideOnMobile: false },
-                  { id: 'volunteers', label: 'Volunteers', icon: Users, hideOnMobile: false }
+                  { id: 'volunteers', label: 'Volunteers', icon: Users, hideOnMobile: false },
+                  { id: 'attendance', label: 'Attendance', icon: UserCheck, hideOnMobile: false },
+                  { id: 'analytics', label: 'Analytics', icon: TrendingUp, hideOnMobile: false }
                 ].map(tab => (
                   <button
                     key={tab.id}
@@ -1948,6 +2302,8 @@ const NGODashboard = () => {
             {activeTab === 'dashboard' && renderDashboardTab()}
             {activeTab === 'events' && renderEventsTab()}
             {activeTab === 'volunteers' && renderVolunteersTab()}
+            {activeTab === 'attendance' && renderAttendanceTab()}
+            {activeTab === 'analytics' && <WasteZeroAnalytics userRole="ngo" />}
           </div>
         </div>
       </div>
@@ -1997,6 +2353,21 @@ const NGODashboard = () => {
         handleUpdateEvent={handleUpdateEvent}
         loading={loading}
       />
+
+      {/* Attendance Management Modal */}
+      {showAttendanceModal && selectedEventForAttendance && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+            <AttendanceManager
+              eventId={selectedEventForAttendance}
+              onClose={() => {
+                setShowAttendanceModal(false);
+                setSelectedEventForAttendance(null);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

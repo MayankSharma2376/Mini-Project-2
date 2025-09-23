@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Send, Search, MessageSquare } from 'lucide-react';
+import { Send, Search, MessageSquare, Users } from 'lucide-react';
 import io from 'socket.io-client';
 import { messageAPI } from '../services/api'; // 👈 Import the new API service
 
@@ -12,6 +12,34 @@ const truncateMessage = (message = "", wordLimit = 11) => {
     return message;
 };
 
+// Helper function to get role badge color
+const getRoleBadgeColor = (role) => {
+    switch (role) {
+        case 'ngo':
+            return 'bg-green-100 text-green-800';
+        case 'volunteer':
+            return 'bg-blue-100 text-blue-800';
+        case 'admin':
+            return 'bg-purple-100 text-purple-800';
+        default:
+            return 'bg-gray-100 text-gray-800';
+    }
+};
+
+// Helper function to format role for display
+const formatRole = (role) => {
+    switch (role) {
+        case 'ngo':
+            return 'NGO';
+        case 'volunteer':
+            return 'Volunteer';
+        case 'admin':
+            return 'Admin';
+        default:
+            return role;
+    }
+};
+
 export default function MessagePage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
@@ -22,14 +50,25 @@ export default function MessagePage() {
   const [search, setSearch] = useState("");
   const [socket, setSocket] = useState(null);
   const [unreadCounts, setUnreadCounts] = useState({});
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUsers, setTypingUsers] = useState({});
   
   const messagesEndRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user") || "null");
     if (user) {
       setCurrentUser(user);
     }
+
+    // Cleanup typing timeout on unmount
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -72,6 +111,19 @@ export default function MessagePage() {
         }
       });
 
+      // Listen for online users
+      newSocket.on("getOnlineUsers", (users) => {
+        setOnlineUsers(users);
+      });
+
+      // Listen for typing events
+      newSocket.on("userTyping", (data) => {
+        setTypingUsers(prev => ({
+          ...prev,
+          [data.senderId]: data.isTyping
+        }));
+      });
+
       return () => newSocket.close();
     }
   }, [currentUser, selectedUser]);
@@ -111,6 +163,12 @@ export default function MessagePage() {
         setMessages(data);
       } catch (err) {
         console.error("Error loading messages:", err);
+        
+        // Handle role-based restrictions
+        if (err.response?.status === 403) {
+          setMessages([]);
+          alert("You cannot view messages with this user type.");
+        }
       }
     };
     getMessages();
@@ -133,6 +191,13 @@ export default function MessagePage() {
       setNewMsg("");
     } catch (err) {
       console.error("Error sending message:", err);
+      
+      // Show user-friendly error for role restrictions
+      if (err.response?.status === 403) {
+        alert("You cannot send messages to this user type. Only NGOs and Volunteers can communicate with each other.");
+      } else {
+        alert("Failed to send message. Please try again.");
+      }
     }
   };
 
@@ -147,12 +212,60 @@ export default function MessagePage() {
       }
   };
 
+  const handleTyping = (value) => {
+    setNewMsg(value);
+    
+    if (socket && selectedUser?._id) {
+      // Send typing indicator
+      socket.emit("typing", {
+        senderId: currentUser._id,
+        receiverId: selectedUser._id,
+        isTyping: value.length > 0
+      });
+
+      // Clear typing after user stops typing
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      typingTimeoutRef.current = setTimeout(() => {
+        socket.emit("typing", {
+          senderId: currentUser._id,
+          receiverId: selectedUser._id,
+          isTyping: false
+        });
+      }, 1000);
+    }
+  };
+
   return (
     // JSX remains unchanged...
     <main className="bg-white font-sans flex flex-col h-[calc(100vh-4rem)]">
-        <div className="p-6 border-b border-slate-200">
-            <h1 className="text-2xl font-bold text-slate-800">Messages</h1>
-            <p className="text-sm text-slate-500">Chat with volunteers, NGOs, and waste management parties</p>
+        <div className="p-6 border-b border-slate-200 bg-gradient-to-r from-teal-50 to-blue-50">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                        <MessageSquare className="w-6 h-6 text-teal-600" />
+                        Messages
+                    </h1>
+                    <p className="text-sm text-slate-600 mt-1">
+                        {currentUser?.role === 'ngo' && "Connect with volunteers and coordinate environmental initiatives"}
+                        {currentUser?.role === 'volunteer' && "Chat with NGOs about available opportunities"}
+                        {currentUser?.role === 'admin' && "Communicate with all platform users"}
+                    </p>
+                </div>
+                {currentUser && (
+                    <div className="flex items-center gap-2">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeColor(currentUser.role)}`}>
+                            {formatRole(currentUser.role)}
+                        </span>
+                        <div className="flex items-center gap-1 text-sm text-slate-500">
+                            <Users className="w-4 h-4" />
+                            <span>{allUsers.length} contacts</span>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
         <div className="flex-grow flex overflow-hidden">
             {/* Left Sidebar */}
@@ -170,31 +283,61 @@ export default function MessagePage() {
                     </div>
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                    {filteredUsers.map((user) => (
-                      <div
-                        key={user._id}
-                        className={`flex items-center p-3 cursor-pointer hover:bg-slate-100 border-b border-slate-200 transition-colors ${selectedUser?._id === user._id ? 'bg-teal-50' : ''}`}
-                        onClick={() => handleUserSelect(user)}
-                      >
-                          <div className="w-11 h-11 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center mr-3 flex-shrink-0 font-semibold text-lg">
-                            {user.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div className="flex-1 overflow-hidden">
-                              <h3 className={`font-semibold truncate ${selectedUser?._id === user._id ? 'text-teal-700' : 'text-slate-800'}`}>
-                                {user.name}
-                              </h3>
-                              <p className="text-sm text-slate-500 truncate">
-                                {user.lastMessage 
-                                    ? truncateMessage(user.lastMessage.message) 
-                                    : "Start a conversation"
-                                }
-                              </p>
-                          </div>
-                          {unreadCounts[user._id] && (
-                            <div className="ml-2 w-2.5 h-2.5 bg-teal-500 rounded-full flex-shrink-0" title={`${unreadCounts[user._id]} unread message(s)`}></div>
-                          )}
-                      </div>
-                    ))}
+                    {filteredUsers.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500">
+                            <Users className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                            <p className="text-sm">No contacts available</p>
+                            <p className="text-xs text-gray-400 mt-1">
+                                {currentUser?.role === 'ngo' && "Volunteers will appear here when they join"}
+                                {currentUser?.role === 'volunteer' && "NGOs will appear here when they create events"}
+                                {currentUser?.role === 'admin' && "All users will appear here"}
+                            </p>
+                        </div>
+                    ) : (
+                        filteredUsers.map((user) => (
+                            <div
+                                key={user._id}
+                                className={`flex items-center p-3 cursor-pointer hover:bg-slate-100 border-b border-slate-100 transition-colors ${selectedUser?._id === user._id ? 'bg-teal-50 border-teal-200' : ''}`}
+                                onClick={() => handleUserSelect(user)}
+                            >
+                                <div className="relative mr-3">
+                                    <div className="w-11 h-11 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center flex-shrink-0 font-semibold text-lg">
+                                        {user.name.charAt(0).toUpperCase()}
+                                    </div>
+                                    {/* Online status indicator */}
+                                    {onlineUsers.includes(user._id) && (
+                                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                                    )}
+                                </div>
+                                <div className="flex-1 overflow-hidden">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h3 className={`font-semibold truncate ${selectedUser?._id === user._id ? 'text-teal-700' : 'text-slate-800'}`}>
+                                            {user.name}
+                                        </h3>
+                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
+                                            {formatRole(user.role)}
+                                        </span>
+                                        {onlineUsers.includes(user._id) && (
+                                            <span className="text-xs text-green-600 font-medium">Online</span>
+                                        )}
+                                    </div>
+                                    <p className="text-sm text-slate-500 truncate">
+                                        {user.lastMessage 
+                                            ? truncateMessage(user.lastMessage.message) 
+                                            : "Start a conversation"
+                                        }
+                                    </p>
+                                </div>
+                                {unreadCounts[user._id] && (
+                                    <div className="ml-2 min-w-[20px] h-5 bg-teal-500 rounded-full flex-shrink-0 flex items-center justify-center" title={`${unreadCounts[user._id]} unread message(s)`}>
+                                        <span className="text-xs text-white px-1">
+                                            {unreadCounts[user._id] > 9 ? '9+' : unreadCounts[user._id]}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
 
@@ -202,11 +345,35 @@ export default function MessagePage() {
             <div className="flex-1 flex flex-col bg-white">
                 {selectedUser ? (
                     <>
-                        <div className="flex items-center p-3 border-b border-slate-200 bg-white shadow-sm">
-                            <div className="w-10 h-10 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center mr-3 font-semibold text-lg">
-                              {selectedUser.name.charAt(0).toUpperCase()}
+                        <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-white shadow-sm">
+                            <div className="flex items-center">
+                                <div className="relative mr-3">
+                                    <div className="w-10 h-10 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center font-semibold text-lg">
+                                        {selectedUser.name.charAt(0).toUpperCase()}
+                                    </div>
+                                    {onlineUsers.includes(selectedUser._id) && (
+                                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                                    )}
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-semibold text-slate-900 text-lg">{selectedUser.name}</h3>
+                                        {onlineUsers.includes(selectedUser._id) && (
+                                            <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded-full">
+                                                Online
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(selectedUser.role)}`}>
+                                        {formatRole(selectedUser.role)}
+                                    </span>
+                                </div>
                             </div>
-                            <h3 className="font-semibold text-slate-900 text-lg">{selectedUser.name}</h3>
+                            <div className="text-sm text-slate-500">
+                                {currentUser?.role === 'ngo' && selectedUser.role === 'volunteer' && "🌱 Environmental Volunteer"}
+                                {currentUser?.role === 'volunteer' && selectedUser.role === 'ngo' && "🌍 Environmental Organization"}
+                                {selectedUser.role === 'admin' && "👨‍💼 Platform Administrator"}
+                            </div>
                         </div>
                         <div className="flex-1 p-6 overflow-y-auto bg-slate-50">
                             {messages.map((m) => (
@@ -219,6 +386,23 @@ export default function MessagePage() {
                                     </div>
                                 </div>
                             ))}
+                            
+                            {/* Typing indicator */}
+                            {typingUsers[selectedUser._id] && (
+                                <div className="flex justify-start mb-4">
+                                    <div className="bg-white text-slate-800 border border-slate-200 p-3 rounded-xl shadow-sm max-w-lg">
+                                        <div className="flex items-center space-x-1">
+                                            <div className="flex space-x-1">
+                                                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                                            </div>
+                                            <span className="text-xs text-slate-500 ml-2">{selectedUser.name} is typing...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            
                             <div ref={messagesEndRef} />
                         </div>
                         <div className="p-4 border-t border-slate-200 bg-white">
@@ -227,20 +411,35 @@ export default function MessagePage() {
                                     type="text"
                                     placeholder="Type a message..."
                                     value={newMsg}
-                                    onChange={(e) => setNewMsg(e.target.value)}
-                                    className="flex-1 w-full px-4 py-2 bg-white border border-slate-300 rounded-full focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                    onChange={(e) => handleTyping(e.target.value)}
+                                    className="flex-1 w-full px-4 py-2 bg-white border border-slate-300 rounded-full focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
                                 />
-                                <button type="submit" className="bg-teal-500 text-white p-2.5 rounded-full hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 transition-colors" disabled={!newMsg.trim()}>
+                                <button 
+                                    type="submit" 
+                                    className="bg-teal-500 text-white p-2.5 rounded-full hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 transition-colors flex items-center justify-center" 
+                                    disabled={!newMsg.trim()}
+                                >
                                     <Send size={20} />
                                 </button>
                             </form>
                         </div>
                     </>
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-slate-500 text-center p-4 bg-slate-50">
-                        <MessageSquare size={48} className="mb-4 text-slate-300" />
-                        <h3 className="text-lg font-semibold">Select a conversation</h3>
-                        <p className="text-sm">Choose a user from the left to start messaging.</p>
+                    <div className="flex flex-col items-center justify-center h-full text-slate-500 text-center p-4 bg-gradient-to-br from-slate-50 to-teal-50">
+                        <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mb-4">
+                            <MessageSquare size={32} className="text-teal-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-700 mb-2">Select a conversation</h3>
+                        <p className="text-sm text-slate-500 mb-4">
+                            {currentUser?.role === 'ngo' && "Choose a volunteer to discuss opportunities and coordinate activities"}
+                            {currentUser?.role === 'volunteer' && "Select an NGO to learn about environmental initiatives"}
+                            {currentUser?.role === 'admin' && "Choose any user to start a conversation"}
+                        </p>
+                        <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200">
+                            <p className="text-xs text-slate-400">
+                                💬 Real-time messaging • 🔒 Secure communication • 🌱 Building sustainable communities
+                            </p>
+                        </div>
                     </div>
                 )}
             </div>

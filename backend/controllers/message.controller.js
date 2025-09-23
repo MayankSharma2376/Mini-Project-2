@@ -1,13 +1,39 @@
 const Conversation = require("../models/conversation.model.js");
 const Message = require("../models/message.model.js");
+const User = require("../models/user.model.js");
 const { getReceiverSocketId, io } = require("../socket/socket.js");
 
-// --- SEND MESSAGE (Your existing code) ---
+// Helper function to check if two users can communicate
+const canCommunicate = (senderRole, receiverRole) => {
+    const allowedCommunications = {
+        'ngo': ['volunteer', 'admin'],
+        'volunteer': ['ngo', 'admin'],
+        'admin': ['volunteer', 'ngo', 'admin']
+    };
+    
+    return allowedCommunications[senderRole]?.includes(receiverRole) || false;
+};
+
+// --- SEND MESSAGE (Enhanced with role-based validation) ---
 const sendMessage = async (req, res) => {
     try {
         const { message } = req.body;
         const { id: receiverId } = req.params;
         const senderId = req.user._id;
+        const senderRole = req.user.role;
+
+        // Get receiver's role for validation
+        const receiver = await User.findById(receiverId).select('role');
+        if (!receiver) {
+            return res.status(404).json({ error: "Receiver not found" });
+        }
+
+        // Check if communication is allowed between these roles
+        if (!canCommunicate(senderRole, receiver.role)) {
+            return res.status(403).json({ 
+                error: "Communication not allowed between these user types" 
+            });
+        }
 
         let conversation = await Conversation.findOne({
             participants: { $all: [senderId, receiverId] },
@@ -42,11 +68,25 @@ const sendMessage = async (req, res) => {
 };
 
 
-// --- GET MESSAGES (The function you need to add) ---
+// --- GET MESSAGES (Enhanced with role-based validation) ---
 const getMessages = async (req, res) => {
     try {
         const { id: userToChatId } = req.params;
         const senderId = req.user._id;
+        const senderRole = req.user.role;
+
+        // Get receiver's role for validation
+        const receiver = await User.findById(userToChatId).select('role');
+        if (!receiver) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Check if communication is allowed between these roles
+        if (!canCommunicate(senderRole, receiver.role)) {
+            return res.status(403).json({ 
+                error: "Communication not allowed between these user types" 
+            });
+        }
 
         // Find conversation containing both users
         const conversation = await Conversation.findOne({

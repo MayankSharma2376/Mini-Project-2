@@ -39,9 +39,6 @@ const Navbar = () => {
     // Redirect to login page and replace current history entry
     navigate('/login', { replace: true });
 
-    // Clear browser history to prevent back navigation to protected routes
-    window.history.replaceState(null, '', '/login');
-
     // Close dropdown
     setShowProfileDropdown(false);
   };

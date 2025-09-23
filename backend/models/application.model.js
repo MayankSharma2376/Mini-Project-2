@@ -35,6 +35,28 @@ const applicationSchema = new mongoose.Schema({
   reviewMessage: {
     type: String,
     maxLength: 500
+  },
+  // Attendance tracking fields
+  attendance: {
+    status: {
+      type: String,
+      enum: ['pending', 'present', 'absent', 'late'],
+      default: 'pending'
+    },
+    markedAt: {
+      type: Date
+    },
+    markedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    arrivalTime: {
+      type: String // Store as HH:MM format
+    },
+    notes: {
+      type: String,
+      maxLength: 200
+    }
   }
 }, {
   timestamps: true

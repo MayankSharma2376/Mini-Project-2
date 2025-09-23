@@ -148,6 +148,22 @@ export const adminAPI = {
     });
     return response.data;
   },
+
+  // Analytics
+  getAnalytics: async (timeRange = 'month') => {
+    const response = await api.get(`/users/admin/analytics?timeRange=${timeRange}`);
+    return response.data;
+  },
+
+  getNGOAnalytics: async (ngoId, timeRange = 'month') => {
+    const response = await api.get(`/users/admin/analytics/ngo/${ngoId}?timeRange=${timeRange}`);
+    return response.data;
+  },
+
+  getVolunteerAnalytics: async (volunteerId) => {
+    const response = await api.get(`/users/admin/analytics/volunteer/${volunteerId}`);
+    return response.data;
+  },
 };
 
 // Message API endpoints
@@ -240,6 +256,62 @@ export const ngoAPI = {
     const response = await api.get(`/ngo/reports/volunteers?period=${period}`);
     return response.data;
   },
+
+  // Attendance management
+  getEventAttendance: async (eventId) => {
+    const response = await api.get(`/ngo/events/${eventId}/attendance`);
+    return response.data;
+  },
+
+  markAttendance: async (eventId, volunteerId, attendanceData) => {
+    const response = await api.post(`/ngo/events/${eventId}/attendance/${volunteerId}`, attendanceData);
+    return response.data;
+  },
+
+  markAllPresent: async (eventId, notes = '') => {
+    const response = await api.post(`/ngo/events/${eventId}/attendance/mark-all-present`, { notes });
+    return response.data;
+  },
+
+  exportAttendanceReport: async (eventId) => {
+    const response = await api.get(`/ngo/events/${eventId}/attendance/export`, {
+      responseType: 'blob'
+    });
+    
+    // Create download link
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `attendance_report_${eventId}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+    
+    return { success: true, message: 'Report downloaded successfully' };
+  },
+
+  // Analytics
+  getAnalytics: async (timeRange = 'month') => {
+    const response = await api.get(`/ngo/analytics?timeRange=${timeRange}`);
+    return response.data;
+  },
+
+  getVolunteerAnalytics: async (volunteerId) => {
+    const response = await api.get(`/ngo/analytics/volunteer/${volunteerId}`);
+    return response.data;
+  },
+
+  // Matching functionality
+  getMatchingVolunteers: async (opportunityId, limit = 20) => {
+    const response = await api.get(`/matching/volunteers/${opportunityId}?limit=${limit}`);
+    return response.data;
+  },
+
+  inviteVolunteer: async (opportunityId, volunteerId) => {
+    const response = await api.post('/matching/invite', { opportunityId, volunteerId });
+    return response.data;
+  }
 };
 
 // Volunteer API endpoints
@@ -247,6 +319,12 @@ export const volunteerAPI = {
   // Dashboard data
   getDashboardStats: async () => {
     const response = await api.get('/volunteer/dashboard-stats');
+    return response.data;
+  },
+
+  // Analytics  
+  getAnalytics: async () => {
+    const response = await api.get('/volunteer/analytics');
     return response.data;
   },
 
@@ -308,6 +386,17 @@ export const volunteerAPI = {
     const response = await api.get('/volunteer/notifications');
     return response.data;
   },
+
+  // Matching functionality
+  getMatchingOpportunities: async (limit = 10) => {
+    const response = await api.get(`/matching/opportunities?limit=${limit}`);
+    return response.data;
+  },
+
+  updatePreferences: async (preferences) => {
+    const response = await api.put('/matching/preferences', preferences);
+    return response.data;
+  }
 };
 
 // --- Interceptors for Logging (from main branch) ---
@@ -357,6 +446,33 @@ export const notificationAPI = {
 
   deleteNotification: async (notificationId) => {
     const response = await api.delete(`/notifications/${notificationId}`);
+    return response.data;
+  }
+};
+
+// Matching API
+export const matchingAPI = {
+  // Get matching opportunities for volunteers
+  getMatchingOpportunities: async (limit = 10) => {
+    const response = await api.get(`/matching/opportunities?limit=${limit}`);
+    return response.data;
+  },
+
+  // Get matching volunteers for NGOs
+  getMatchingVolunteers: async (opportunityId, limit = 20) => {
+    const response = await api.get(`/matching/volunteers/${opportunityId}?limit=${limit}`);
+    return response.data;
+  },
+
+  // Update volunteer preferences
+  updateVolunteerPreferences: async (preferences) => {
+    const response = await api.put('/matching/preferences', preferences);
+    return response.data;
+  },
+
+  // Invite volunteer to opportunity (NGO only)
+  inviteVolunteer: async (opportunityId, volunteerId) => {
+    const response = await api.post('/matching/invite', { opportunityId, volunteerId });
     return response.data;
   }
 };

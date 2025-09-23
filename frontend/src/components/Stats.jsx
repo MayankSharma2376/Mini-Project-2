@@ -1,171 +1,53 @@
 import React from 'react';
 
+// Data for the stats and images to keep the component DRY
+const statsData = [
+  { value: '250+', label: 'Total Pickups Completed' },
+  { value: '631kg', label: 'Waste Collected' },
+  { value: '8', label: 'Opportunities Applied' },
+];
+
+const imageData = [
+  { src: 'img1.png', alt: 'People sorting recycling', zIndex: 'z-30' },
+  { src: 'img2.png', alt: 'Bags of collected waste', zIndex: 'z-20' },
+  { src: 'img3.png', alt: 'Community cleanup event', zIndex: 'z-10' },
+];
+
 const Stats = () => {
   return (
-    <section
-      className="stats"
-      style={{
-        padding: '4rem 0',
-        backgroundColor: '#e5e5dc', // new beige/cream color
-        fontFamily: '"Poppins", sans-serif',
-        color: '#1b4332',
-      }}
-    >
-      {/* Stats Row */}
-      <div
-        className="container"
-        style={{
-          width: '90%',
-          maxWidth: '1200px',
-          margin: '0 auto',
-          display: 'flex',
-          justifyContent: 'space-around',
-          textAlign: 'center',
-          flexWrap: 'wrap',
-          gap: '2rem',
-        }}
-      >
-        <div
-          className="stat-item"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            maxWidth: '250px',
-          }}
-        >
-          <h3
-            style={{
-              fontSize: '2.8rem',
-              color: '#1b4332', // dark green for numbers
-              marginBottom: '0.5rem',
-              fontWeight: '700',
-            }}
-          >
-            250+
-          </h3>
-          <p
-            style={{
-              fontSize: '1.2rem',
-              color: '#1b4332',
-              fontWeight: '500',
-            }}
-          >
-            Total Pickups Completed
-          </p>
+    <section className="bg-[#e5e5dc] py-16 sm:py-20 text-[#1b4332]">
+      <div className="container mx-auto px-4">
+        {/* Stats Row */}
+        <div className="flex flex-wrap justify-around gap-8 text-center">
+          {statsData.map((stat, index) => (
+            <div key={index} className="flex flex-col items-center">
+              <h3 className="text-4xl md:text-5xl font-bold mb-2">
+                {stat.value}
+              </h3>
+              <p className="text-lg font-medium max-w-[200px]">
+                {stat.label}
+              </p>
+            </div>
+          ))}
         </div>
 
-        <div
-          className="stat-item"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            maxWidth: '250px',
-          }}
-        >
-          <h3
-            style={{
-              fontSize: '2.8rem',
-              color: '#1b4332',
-              marginBottom: '0.5rem',
-              fontWeight: '700',
-            }}
-          >
-            631kg
-          </h3>
-          <p
-            style={{
-              fontSize: '1.2rem',
-              color: '#1b4332',
-              fontWeight: '500',
-            }}
-          >
-            Waste Collected
-          </p>
+        {/* Images Row with Overlap */}
+        <div className="mt-16 flex flex-col md:flex-row items-center justify-center">
+          {imageData.map((image, index) => (
+            <img
+              key={index}
+              src={image.src}
+              alt={image.alt}
+              className={`
+                w-64 h-48 md:w-72 md:h-52  /* Responsive sizing */
+                rounded-2xl object-cover relative /* Basic styling */
+                shadow-[0_4px_12px_rgba(0,0,0,0.4)] /* Custom shadow */
+                ${image.zIndex} /* Z-index for layering */
+                ${index > 0 ? '-mt-16 md:mt-0 md:-ml-20' : ''} /* Responsive overlap logic */
+              `}
+            />
+          ))}
         </div>
-
-        <div
-          className="stat-item"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            maxWidth: '250px',
-          }}
-        >
-          <h3
-            style={{
-              fontSize: '2.8rem',
-              color: '#1b4332',
-              marginBottom: '0.5rem',
-              fontWeight: '700',
-            }}
-          >
-            8
-          </h3>
-          <p
-            style={{
-              fontSize: '1.2rem',
-              color: '#1b4332',
-              fontWeight: '500',
-            }}
-          >
-            Opportunities Applied
-          </p>
-        </div>
-      </div>
-
-      {/* Images Row with Overlap */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          marginTop: '3rem',
-          position: 'relative',
-        }}
-      >
-        <img
-          src="/img1.png"
-          alt="Pickups Completed"
-          style={{
-            width: '280px',
-            height: '200px',
-            borderRadius: '15px',
-            objectFit: 'cover',
-            position: 'relative',
-            zIndex: 3,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-          }}
-        />
-        <img
-          src="/img2.png"
-          alt="Waste Collected"
-          style={{
-            width: '280px',
-            height: '200px',
-            borderRadius: '15px',
-            objectFit: 'cover',
-            marginLeft: '-80px',
-            position: 'relative',
-            zIndex: 2,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-          }}
-        />
-        <img
-          src="/img3.png"
-          alt="Opportunities Applied"
-          style={{
-            width: '280px',
-            height: '200px',
-            borderRadius: '15px',
-            objectFit: 'cover',
-            marginLeft: '-80px',
-            position: 'relative',
-            zIndex: 1,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-          }}
-        />
       </div>
     </section>
   );

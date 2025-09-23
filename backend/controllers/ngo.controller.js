@@ -1,4 +1,3 @@
-// controllers/ngo.controller.js
 const User = require('../models/user.model');
 const Opportunity = require('../models/opportunity.model');
 const Application = require('../models/application.model');
@@ -55,34 +54,115 @@ const getDashboardStats = async (req, res) => {
 // Get Recent Activities
 const getRecentActivities = async (req, res) => {
   try {
-    // Mock recent activities data
-    const activities = [
-      {
-        id: 1,
+    const ngoId = req.user.id;
+    const activities = [];
+
+    // Get recent applications to NGO's events
+    const recentApplications = await Application.find()
+      .populate({
+        path: 'opportunityId',
+        match: { createdBy: ngoId },
+        select: 'title category'
+      })
+      .populate('volunteerId', 'name')
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    // Filter out applications where opportunityId is null (not NGO's events)
+    const validApplications = recentApplications.filter(app => app.opportunityId);
+
+    // Add application activities
+    validApplications.forEach(app => {
+      activities.push({
+        id: `app_${app._id}`,
         type: 'volunteer_registration',
-        message: 'New volunteer registered for River Cleanup Drive',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-        icon: 'user-check'
-      },
-      {
-        id: 2,
-        type: 'event_update',
-        message: 'Recycling Workshop event updated',
-        timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
-        icon: 'calendar'
-      },
-      {
-        id: 3,
-        type: 'feedback',
-        message: 'Community Garden Project received positive feedback',
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-        icon: 'heart'
+        message: `${app.volunteerId?.name || 'A volunteer'} applied for ${app.opportunityId?.title || 'an event'}`,
+        timestamp: app.createdAt,
+        icon: 'user-check',
+        status: app.status,
+        details: {
+          volunteer: app.volunteerId?.name,
+          event: app.opportunityId?.title,
+          category: app.opportunityId?.category
+        }
+      });
+    });
+
+    // Get recent event updates (events created/modified)
+    const recentEvents = await Opportunity.find({ createdBy: ngoId })
+      .sort({ updatedAt: -1 })
+      .limit(5);
+
+    recentEvents.forEach(event => {
+      // Check if event was recently created (within last 24 hours)
+      const isNewEvent = (Date.now() - new Date(event.createdAt).getTime()) < 24 * 60 * 60 * 1000;
+      
+      if (isNewEvent) {
+        activities.push({
+          id: `event_created_${event._id}`,
+          type: 'event_created',
+          message: `New event "${event.title}" was created`,
+          timestamp: event.createdAt,
+          icon: 'calendar-plus',
+          details: {
+            event: event.title,
+            category: event.category,
+            location: event.location,
+            date: event.date
+          }
+        });
+      } else if (event.updatedAt > event.createdAt) {
+        // Event was updated
+        activities.push({
+          id: `event_updated_${event._id}`,
+          type: 'event_update',
+          message: `Event "${event.title}" was updated`,
+          timestamp: event.updatedAt,
+          icon: 'calendar',
+          details: {
+            event: event.title,
+            category: event.category
+          }
+        });
       }
-    ];
+    });
+
+    // Get accepted applications (successful registrations)
+    const acceptedApplications = await Application.find({ status: 'accepted' })
+      .populate({
+        path: 'opportunityId',
+        match: { createdBy: ngoId },
+        select: 'title'
+      })
+      .populate('volunteerId', 'name')
+      .sort({ updatedAt: -1 })
+      .limit(5);
+
+    const validAcceptedApps = acceptedApplications.filter(app => app.opportunityId);
+    
+    validAcceptedApps.forEach(app => {
+      activities.push({
+        id: `accepted_${app._id}`,
+        type: 'volunteer_accepted',
+        message: `${app.volunteerId?.name || 'A volunteer'} was accepted for ${app.opportunityId?.title}`,
+        timestamp: app.updatedAt,
+        icon: 'check-circle',
+        details: {
+          volunteer: app.volunteerId?.name,
+          event: app.opportunityId?.title
+        }
+      });
+    });
+
+    // Sort all activities by timestamp (most recent first)
+    activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    // Take only the 10 most recent activities
+    const recentActivities = activities.slice(0, 10);
 
     res.json({
       success: true,
-      data: activities
+      data: recentActivities
     });
   } catch (error) {
     console.error('Error fetching recent activities:', error);
@@ -146,7 +226,21 @@ const createEvent = async (req, res) => {
   try {
     console.log('Creating event with data:', req.body); // Debug log
     console.log('User data:', req.user); // Debug log
-    const { title, description, location, date, capacity, category, duration, requiredSkills, applicationDeadline, image } = req.body;
+    const { 
+      title, 
+      description, 
+      location, 
+      date, 
+      capacity, 
+      category, 
+      duration, 
+      requiredSkills, 
+      applicationDeadline, 
+      image,
+      wasteTypes,
+      requiredExperienceLevel,
+      timeOfDay
+    } = req.body;
     const ngoId = req.user._id || req.user.id; // Handle both _id and id
 
     // Validation - Fixed to match frontend fields
@@ -158,12 +252,83 @@ const createEvent = async (req, res) => {
       });
     }
 
+    // Validate waste types are provided
+    if (!wasteTypes || !Array.isArray(wasteTypes) || wasteTypes.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one waste type must be selected'
+      });
+    }
+
     if (new Date(date) < new Date()) {
       return res.status(400).json({
         success: false,
         message: 'Event date cannot be in the past'
       });
     }
+
+    // Validate application deadline
+    if (applicationDeadline) {
+      const eventDate = new Date(date);
+      const deadline = new Date(applicationDeadline);
+      
+      if (deadline >= eventDate) {
+        return res.status(400).json({
+          success: false,
+          message: 'Application deadline must be before the event date'
+        });
+      }
+      
+      if (deadline < new Date()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Application deadline cannot be in the past'
+        });
+      }
+    }
+
+    // Simple geocoding function for demo purposes
+    // In production, you would use a real geocoding API like Google Maps
+    const getCoordinatesFromLocation = (locationString) => {
+      const location = locationString.toLowerCase();
+      
+      // Sample coordinates for common cities (you can expand this)
+      const cityCoordinates = {
+        'new york': { latitude: 40.7128, longitude: -74.0060 },
+        'los angeles': { latitude: 34.0522, longitude: -118.2437 },
+        'chicago': { latitude: 41.8781, longitude: -87.6298 },
+        'houston': { latitude: 29.7604, longitude: -95.3698 },
+        'philadelphia': { latitude: 39.9526, longitude: -75.1652 },
+        'phoenix': { latitude: 33.4484, longitude: -112.0740 },
+        'san antonio': { latitude: 29.4241, longitude: -98.4936 },
+        'san diego': { latitude: 32.7157, longitude: -117.1611 },
+        'dallas': { latitude: 32.7767, longitude: -96.7970 },
+        'san jose': { latitude: 37.3382, longitude: -121.8863 },
+        'mumbai': { latitude: 19.0760, longitude: 72.8777 },
+        'delhi': { latitude: 28.7041, longitude: 77.1025 },
+        'bangalore': { latitude: 12.9716, longitude: 77.5946 },
+        'hyderabad': { latitude: 17.3850, longitude: 78.4867 },
+        'ahmedabad': { latitude: 23.0225, longitude: 72.5714 },
+        'chennai': { latitude: 13.0827, longitude: 80.2707 },
+        'kolkata': { latitude: 22.5726, longitude: 88.3639 },
+        'pune': { latitude: 18.5204, longitude: 73.8567 },
+        'jaipur': { latitude: 26.9124, longitude: 75.7873 },
+        'surat': { latitude: 21.1702, longitude: 72.8311 }
+      };
+
+      // Check for exact city matches
+      for (const [city, coords] of Object.entries(cityCoordinates)) {
+        if (location.includes(city)) {
+          return coords;
+        }
+      }
+
+      // Default coordinates (you can set this to your region's center)
+      return { latitude: 28.7041, longitude: 77.1025 }; // Delhi, India as default
+    };
+
+    // Get coordinates from location
+    const coordinates = getCoordinatesFromLocation(location);
 
     if (capacity < 1) {
       return res.status(400).json({
@@ -201,6 +366,10 @@ const createEvent = async (req, res) => {
       title: title.trim(),
       description: description.trim(),
       location: location.trim(),
+      coordinates: coordinates, // Add coordinates
+      wasteTypes: wasteTypes || [], // Add waste types
+      requiredExperienceLevel: requiredExperienceLevel || 'beginner', // Add experience level
+      timeOfDay: timeOfDay || 'morning', // Add time of day
       date: new Date(date),
       capacity: parseInt(capacity),
       category: category || 'environmental',
@@ -306,7 +475,28 @@ const updateEvent = async (req, res) => {
     if (duration) opportunity.duration = duration.trim();
     if (requiredSkills !== undefined) opportunity.requiredSkills = requiredSkills;
     if (applicationDeadline !== undefined) {
-      opportunity.applicationDeadline = applicationDeadline ? new Date(applicationDeadline) : null;
+      if (applicationDeadline) {
+        const eventDate = opportunity.date;
+        const deadline = new Date(applicationDeadline);
+        
+        if (deadline >= eventDate) {
+          return res.status(400).json({
+            success: false,
+            message: 'Application deadline must be before the event date'
+          });
+        }
+        
+        if (deadline < new Date()) {
+          return res.status(400).json({
+            success: false,
+            message: 'Application deadline cannot be in the past'
+          });
+        }
+        
+        opportunity.applicationDeadline = deadline;
+      } else {
+        opportunity.applicationDeadline = null;
+      }
     }
 
     const updatedOpportunity = await opportunity.save();
@@ -724,6 +914,589 @@ const reviewApplication = async (req, res) => {
   }
 };
 
+// Attendance Management Functions
+
+// Get Event Attendance
+const getEventAttendance = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const ngoId = req.user.id;
+
+    // Verify NGO owns this event
+    const event = await Opportunity.findOne({ _id: eventId, createdBy: ngoId });
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found or access denied'
+      });
+    }
+
+    // Get all accepted applications (volunteers) for this event
+    const applications = await Application.find({ 
+      opportunityId: eventId, 
+      status: 'accepted' 
+    })
+    .populate('volunteerId', 'name email phone')
+    .sort({ appliedAt: 1 });
+
+    // Format for frontend
+    const attendanceData = applications.map(app => ({
+      id: app._id,
+      volunteerId: app.volunteerId._id,
+      volunteerName: app.volunteerId.name,
+      email: app.volunteerId.email,
+      phone: app.volunteerId.phone,
+      attendanceStatus: app.attendance?.status || 'pending',
+      arrivalTime: app.attendance?.arrivalTime || '',
+      notes: app.attendance?.notes || '',
+      markedAt: app.attendance?.markedAt,
+      appliedAt: app.appliedAt
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        event: {
+          id: event._id,
+          title: event.title,
+          date: event.date,
+          location: event.location
+        },
+        volunteers: attendanceData,
+        stats: {
+          total: attendanceData.length,
+          present: attendanceData.filter(v => v.attendanceStatus === 'present').length,
+          absent: attendanceData.filter(v => v.attendanceStatus === 'absent').length,
+          late: attendanceData.filter(v => v.attendanceStatus === 'late').length,
+          pending: attendanceData.filter(v => v.attendanceStatus === 'pending').length
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching event attendance:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch attendance data'
+    });
+  }
+};
+
+// Mark Single Volunteer Attendance
+const markAttendance = async (req, res) => {
+  try {
+    const { eventId, volunteerId } = req.params;
+    const { status, arrivalTime, notes } = req.body;
+    const ngoId = req.user.id;
+
+    // Verify NGO owns this event
+    const event = await Opportunity.findOne({ _id: eventId, createdBy: ngoId });
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found or access denied'
+      });
+    }
+
+    // Find the application
+    const application = await Application.findOne({ 
+      opportunityId: eventId, 
+      volunteerId: volunteerId,
+      status: 'accepted'
+    }).populate('volunteerId', 'name');
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: 'Volunteer application not found or not accepted'
+      });
+    }
+
+    // Update attendance
+    const currentTime = new Date().toLocaleTimeString('en-US', { 
+      hour12: false, 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+
+    application.attendance = {
+      status: status,
+      markedAt: new Date(),
+      markedBy: ngoId,
+      arrivalTime: (status === 'present' || status === 'late') ? (arrivalTime || currentTime) : '',
+      notes: notes || ''
+    };
+
+    await application.save();
+
+    res.json({
+      success: true,
+      message: `Attendance marked as ${status} for ${application.volunteerId.name}`,
+      data: {
+        volunteerId: volunteerId,
+        status: status,
+        arrivalTime: application.attendance.arrivalTime,
+        markedAt: application.attendance.markedAt
+      }
+    });
+  } catch (error) {
+    console.error('Error marking attendance:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to mark attendance'
+    });
+  }
+};
+
+// Mark All Volunteers Present
+const markAllPresent = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { notes } = req.body;
+    const ngoId = req.user.id;
+
+    // Verify NGO owns this event
+    const event = await Opportunity.findOne({ _id: eventId, createdBy: ngoId });
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found or access denied'
+      });
+    }
+
+    // Get all accepted applications for this event
+    const applications = await Application.find({ 
+      opportunityId: eventId, 
+      status: 'accepted' 
+    });
+
+    const currentTime = new Date().toLocaleTimeString('en-US', { 
+      hour12: false, 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+
+    // Update all applications
+    const updatePromises = applications.map(app => {
+      app.attendance = {
+        status: 'present',
+        markedAt: new Date(),
+        markedBy: ngoId,
+        arrivalTime: currentTime,
+        notes: notes || 'Bulk marked present'
+      };
+      return app.save();
+    });
+
+    await Promise.all(updatePromises);
+
+    res.json({
+      success: true,
+      message: `All ${applications.length} volunteers marked as present`,
+      data: {
+        eventId: eventId,
+        markedCount: applications.length,
+        markedAt: new Date()
+      }
+    });
+  } catch (error) {
+    console.error('Error marking all present:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to mark all present'
+    });
+  }
+};
+
+// Export Attendance Report
+const exportAttendanceReport = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const ngoId = req.user.id;
+
+    // Verify NGO owns this event
+    const event = await Opportunity.findOne({ _id: eventId, createdBy: ngoId });
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found or access denied'
+      });
+    }
+
+    // Get attendance data
+    const applications = await Application.find({ 
+      opportunityId: eventId, 
+      status: 'accepted' 
+    })
+    .populate('volunteerId', 'name email phone')
+    .sort({ appliedAt: 1 });
+
+    // Generate CSV content
+    let csvContent = 'Volunteer ID,Name,Email,Phone,Status,Arrival Time,Notes,Applied Date\n';
+    
+    applications.forEach(app => {
+      const attendance = app.attendance || {};
+      csvContent += `${app.volunteerId._id},${app.volunteerId.name},${app.volunteerId.email},${app.volunteerId.phone || ''},${attendance.status || 'pending'},${attendance.arrivalTime || ''},${(attendance.notes || '').replace(/,/g, ';')},${app.appliedAt.toISOString().split('T')[0]}\n`;
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="attendance_${event.title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.csv"`);
+    res.send(csvContent);
+  } catch (error) {
+    console.error('Error exporting attendance report:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to export attendance report'
+    });
+  }
+};
+
+// Get Analytics Data for NGO
+const getAnalyticsData = async (req, res) => {
+  try {
+    const ngoId = req.user.id;
+    const { timeRange = 'month' } = req.query;
+
+    console.log('🔍 Analytics Request:', { ngoId, timeRange }); // Debug log
+
+    // Calculate date range
+    const now = new Date();
+    let startDate;
+    
+    switch (timeRange) {
+      case 'week':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'quarter':
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case 'year':
+        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
+      default: // month
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    }
+
+    console.log('📅 Date range:', { startDate, endDate: now }); // Debug log
+
+    // Get NGO's events
+    const ngoEvents = await Opportunity.find({ createdBy: ngoId });
+    console.log(`📊 Found ${ngoEvents.length} events for NGO ${ngoId}`); // Debug log
+    
+    if (ngoEvents.length > 0) {
+      console.log('📋 Event details:', ngoEvents.map(event => ({
+        id: event._id,
+        title: event.title,
+        category: event.category,
+        createdAt: event.createdAt,
+        status: event.status
+      })));
+    } else {
+      console.log('⚠️ No events found for NGO. Checking NGO ID and events collection...');
+      // Let's check if there are any events at all in the collection
+      const totalEvents = await Opportunity.countDocuments();
+      console.log(`Total events in database: ${totalEvents}`);
+    }
+
+    const eventIds = ngoEvents.map(event => event._id);
+
+    // Get applications for NGO's events
+    const applications = await Application.find({
+      opportunityId: { $in: eventIds },
+      createdAt: { $gte: startDate }
+    }).populate('volunteerId', 'name email createdAt')
+      .populate('opportunityId', 'title date category location');
+
+    console.log(`📝 Found ${applications.length} applications in date range`); // Debug log
+
+    // Get unique volunteers
+    const uniqueVolunteers = await Application.distinct('volunteerId', {
+      opportunityId: { $in: eventIds },
+      status: 'accepted'
+    });
+
+    console.log(`👥 Found ${uniqueVolunteers.length} unique volunteers`); // Debug log
+
+    // Get volunteer details
+    const volunteerData = await User.find({
+      _id: { $in: uniqueVolunteers }
+    }).select('name email createdAt skills location');
+
+    // Calculate statistics
+    const totalVolunteers = volunteerData.length;
+    const totalEvents = ngoEvents.length;
+    const activeEvents = ngoEvents.filter(event => event.status === 'active').length;
+    const completedEvents = ngoEvents.filter(event => event.status === 'completed').length;
+    const totalApplications = applications.length;
+    const acceptedApplications = applications.filter(app => app.status === 'accepted').length;
+    const pendingApplications = applications.filter(app => app.status === 'pending').length;
+    const rejectedApplications = applications.filter(app => app.status === 'rejected').length;
+
+    // Calculate volunteer hours (4 hours per accepted application)
+    const totalVolunteerHours = acceptedApplications * 4;
+
+    // Environmental impact calculations
+    const wasteCollected = acceptedApplications * 15; // 15kg per volunteer on average
+    const treesPlanted = Math.floor(acceptedApplications * 0.8); // 0.8 trees per volunteer
+    const co2Saved = Math.floor(wasteCollected * 0.5); // 0.5kg CO2 per kg waste
+
+    // Monthly breakdown for charts - Track EVENTS CREATED by month (not applications)
+    const monthlyData = [];
+    const currentDate = new Date();
+    
+    for (let i = 11; i >= 0; i--) {
+      const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+      const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() - i + 1, 0, 23, 59, 59);
+      
+      // Count events CREATED in this month
+      const monthEvents = ngoEvents.filter(event => 
+        event.createdAt >= monthStart && event.createdAt <= monthEnd
+      );
+      
+      // Count applications in this month for secondary metrics
+      const monthApps = applications.filter(app => 
+        app.createdAt >= monthStart && app.createdAt <= monthEnd
+      );
+      
+      monthlyData.push({
+        month: monthStart.toLocaleDateString('en-US', { month: 'short' }),
+        events: monthEvents.length, // Events created this month
+        applications: monthApps.length,
+        volunteers: new Set(monthApps.map(app => app.volunteerId?.toString())).size,
+        waste: monthApps.filter(app => app.status === 'accepted').length * 15,
+        hours: monthApps.filter(app => app.status === 'accepted').length * 4
+      });
+    }
+
+    console.log('📅 Monthly data generated:', monthlyData.map(m => ({
+      month: m.month,
+      events: m.events,
+      applications: m.applications
+    }))); // Debug log
+
+    // Event category breakdown - Use actual EVENT categories (not application categories)
+    const eventCategoryStats = {};
+    ngoEvents.forEach(event => {
+      const category = event.category || 'Other';
+      eventCategoryStats[category] = (eventCategoryStats[category] || 0) + 1;
+    });
+
+    // Ensure we have at least some activity data to display
+    let activityTypeData = Object.entries(eventCategoryStats).map(([name, value]) => ({
+      name,
+      value: Math.round((value / totalEvents) * 100) || 0,
+      count: value
+    }));
+
+    // If no events exist, provide sample data so charts aren't empty
+    if (activityTypeData.length === 0) {
+      console.log('⚠️ No event categories found, providing sample data for charts');
+      activityTypeData = [
+        { name: 'Environmental', value: 100, count: 0 },
+      ];
+    }
+
+    console.log('📊 Event categories found:', eventCategoryStats); // Debug log
+    console.log('📊 Activity type data for charts:', activityTypeData); // Debug log
+
+    // Recent activities - Show NGO's own events instead of applications
+    const recentActivities = ngoEvents
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 10)
+      .map(event => ({
+        id: event._id,
+        type: 'Event',
+        name: event.title || 'Unknown Event',
+        event: event.title || 'Unknown Event',
+        status: event.status || 'active',
+        date: event.createdAt,
+        eventDate: event.date,
+        location: event.location || 'Unknown',
+        description: event.description || '',
+        category: event.category || 'Other'
+      }));
+
+    // Top volunteers
+    const volunteerStats = {};
+    applications.filter(app => app.status === 'accepted').forEach(app => {
+      const volunteerId = app.volunteerId?._id?.toString();
+      if (volunteerId) {
+        volunteerStats[volunteerId] = (volunteerStats[volunteerId] || 0) + 1;
+      }
+    });
+
+    const topVolunteers = Object.entries(volunteerStats)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 5)
+      .map(([volunteerId, count]) => {
+        const volunteer = volunteerData.find(v => v._id.toString() === volunteerId);
+        return {
+          id: volunteerId,
+          name: volunteer?.name || 'Unknown',
+          email: volunteer?.email || '',
+          eventsParticipated: count,
+          totalHours: count * 4,
+          joinDate: volunteer?.createdAt || new Date()
+        };
+      });
+
+    const responseData = {
+      overview: {
+        totalVolunteers,
+        totalEvents,
+        activeEvents,
+        completedEvents,
+        totalApplications,
+        acceptedApplications,
+        pendingApplications,
+        rejectedApplications,
+        totalVolunteerHours,
+        wasteCollected,
+        treesPlanted,
+        co2Saved
+      },
+      monthlyData,
+      activityTypeData,
+      recentActivities,
+      topVolunteers,
+      timeRange
+    };
+
+    console.log('📤 Sending analytics response:', JSON.stringify({
+      overview: responseData.overview,
+      monthlyDataLength: responseData.monthlyData.length,
+      monthlyDataSample: responseData.monthlyData.slice(0, 3), // Show first 3 months
+      activityTypeDataLength: responseData.activityTypeData.length,
+      activityTypeData: responseData.activityTypeData, // Show all categories
+      recentActivitiesLength: responseData.recentActivities.length,
+      topVolunteersLength: responseData.topVolunteers.length
+    }, null, 2)); // Debug log
+
+    res.json({
+      success: true,
+      data: responseData
+    });
+  } catch (error) {
+    console.error('Error fetching analytics data:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch analytics data'
+    });
+  }
+};
+
+// Get Volunteer Analytics for NGO
+const getVolunteerAnalytics = async (req, res) => {
+  try {
+    const ngoId = req.user.id;
+    const { volunteerId } = req.params;
+
+    // Get NGO's events
+    const ngoEvents = await Opportunity.find({ createdBy: ngoId });
+    const eventIds = ngoEvents.map(event => event._id);
+
+    // Get volunteer's applications for this NGO's events
+    const volunteerApplications = await Application.find({
+      volunteerId,
+      opportunityId: { $in: eventIds }
+    }).populate('opportunityId', 'title date category location')
+      .sort({ createdAt: -1 });
+
+    // Get volunteer details
+    const volunteer = await User.findById(volunteerId)
+      .select('fullName email createdAt skills location bio');
+
+    if (!volunteer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Volunteer not found'
+      });
+    }
+
+    // Calculate volunteer statistics
+    const totalApplications = volunteerApplications.length;
+    const acceptedApplications = volunteerApplications.filter(app => app.status === 'accepted').length;
+    const pendingApplications = volunteerApplications.filter(app => app.status === 'pending').length;
+    const rejectedApplications = volunteerApplications.filter(app => app.status === 'rejected').length;
+    const hoursVolunteered = acceptedApplications * 4;
+    const wasteCollected = acceptedApplications * 15;
+    const treesPlanted = Math.floor(acceptedApplications * 0.8);
+    const co2Saved = Math.floor(wasteCollected * 0.5);
+
+    // Calculate impact score
+    const impactScore = (acceptedApplications * 50) + (hoursVolunteered * 10) + (wasteCollected * 2);
+
+    // Monthly activity breakdown
+    const monthlyActivity = [];
+    const currentDate = new Date();
+    
+    for (let i = 5; i >= 0; i--) {
+      const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+      const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() - i + 1, 0, 23, 59, 59);
+      
+      const monthApps = volunteerApplications.filter(app => 
+        app.createdAt >= monthStart && app.createdAt <= monthEnd
+      );
+      
+      monthlyActivity.push({
+        month: monthStart.toLocaleDateString('en-US', { month: 'short' }),
+        applications: monthApps.length,
+        accepted: monthApps.filter(app => app.status === 'accepted').length,
+        waste: monthApps.filter(app => app.status === 'accepted').length * 15,
+        hours: monthApps.filter(app => app.status === 'accepted').length * 4
+      });
+    }
+
+    // Event category participation
+    const categoryParticipation = {};
+    volunteerApplications.filter(app => app.status === 'accepted').forEach(app => {
+      const category = app.opportunityId?.category || 'Other';
+      categoryParticipation[category] = (categoryParticipation[category] || 0) + 1;
+    });
+
+    res.json({
+      success: true,
+      data: {
+        volunteer: {
+          id: volunteer._id,
+          name: volunteer.fullName,
+          email: volunteer.email,
+          joinDate: volunteer.createdAt,
+          skills: volunteer.skills || [],
+          location: volunteer.location || 'Not specified',
+          bio: volunteer.bio || 'No bio available'
+        },
+        stats: {
+          totalApplications,
+          acceptedApplications,
+          pendingApplications,
+          rejectedApplications,
+          hoursVolunteered,
+          wasteCollected,
+          treesPlanted,
+          co2Saved,
+          impactScore
+        },
+        monthlyActivity,
+        categoryParticipation,
+        recentApplications: volunteerApplications.slice(0, 10).map(app => ({
+          id: app._id,
+          event: app.opportunityId?.title || 'Unknown Event',
+          date: app.opportunityId?.date || new Date(),
+          status: app.status,
+          location: app.opportunityId?.location || 'Unknown',
+          appliedDate: app.createdAt
+        }))
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching volunteer analytics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch volunteer analytics'
+    });
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getRecentActivities,
@@ -737,5 +1510,13 @@ module.exports = {
   getVolunteerDetails,
   sendMessageToVolunteer,
   getEventReport,
-  getVolunteerReport
+  getVolunteerReport,
+  // New attendance functions
+  getEventAttendance,
+  markAttendance,
+  markAllPresent,
+  exportAttendanceReport,
+  // Analytics functions
+  getAnalyticsData,
+  getVolunteerAnalytics
 };
