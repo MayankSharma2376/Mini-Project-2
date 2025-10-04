@@ -10,6 +10,15 @@ const api = axios.create({
   },
 });
 
+// A bare axios instance without our interceptors, used for health/status checks
+const bareApi = axios.create({
+  baseURL,
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
 export const authAPI = {
   register: async (userData) => {
     const response = await api.post('/auth/register', userData);
@@ -55,8 +64,8 @@ export const authAPI = {
   },
 };
 
-// Admin API endpoints
-export const adminAPI = {
+// Additional Admin API endpoints for legacy support
+export const legacyAdminAPI = {
   // Dashboard data
   getDashboardStats: async () => {
     const response = await api.get('/admin/dashboard/stats');
@@ -147,23 +156,7 @@ export const adminAPI = {
       responseType: 'blob'
     });
     return response.data;
-  },
-
-  // Analytics
-  getAnalytics: async (timeRange = 'month') => {
-    const response = await api.get(`/users/admin/analytics?timeRange=${timeRange}`);
-    return response.data;
-  },
-
-  getNGOAnalytics: async (ngoId, timeRange = 'month') => {
-    const response = await api.get(`/users/admin/analytics/ngo/${ngoId}?timeRange=${timeRange}`);
-    return response.data;
-  },
-
-  getVolunteerAnalytics: async (volunteerId) => {
-    const response = await api.get(`/users/admin/analytics/volunteer/${volunteerId}`);
-    return response.data;
-  },
+  }
 };
 
 // Message API endpoints
@@ -186,6 +179,16 @@ export const messageAPI = {
 
 // NGO API endpoints
 export const ngoAPI = {
+  // Profile management
+  getProfile: async () => {
+    const response = await api.get('/ngo/profile');
+    return response.data;
+  },
+  updateProfile: async (profileData) => {
+    const response = await api.put('/ngo/profile', profileData);
+    return response.data;
+  },
+
   // Dashboard data
   getDashboardStats: async () => {
     const response = await api.get('/ngo/dashboard/stats');
@@ -411,6 +414,39 @@ api.interceptors.request.use(
   }
 );
 
+// Global blocked user handler (will be set by BlockedUserContext)
+let globalBlockedUserHandler = null;
+let hasHandledBlockedUser = false; // Flag to prevent duplicate handling
+
+// Function to set the global handler
+export const setGlobalBlockedUserHandler = (handler) => {
+  globalBlockedUserHandler = handler;
+};
+
+// Function to reset the blocked user flag (call this on logout/login)
+export const resetBlockedUserFlag = () => {
+  hasHandledBlockedUser = false;
+};
+
+// Function to check current user status (to verify if still blocked)
+export const checkUserStatus = async () => {
+  try {
+    // Call a protected endpoint WITHOUT our response interceptor to get authoritative status
+    const response = await bareApi.get('/users');
+    // If we get here, request succeeded and user is not blocked
+    return { success: true, isBlocked: false, user: response.data };
+  } catch (error) {
+    const status = error?.response?.status;
+    const data = error?.response?.data;
+    if (status === 403 && data?.isBlocked) {
+      // Server confirms blocked status
+      return { success: true, isBlocked: true, blockReason: data.blockReason, blockedAt: data.blockedAt };
+    }
+    // Unknown error (network, 5xx, etc). Don't change state on caller side.
+    return { success: false, isBlocked: null };
+  }
+};
+
 api.interceptors.response.use(
   (response) => {
     console.log('API Response:', response.status, response.config.url, response.data);
@@ -423,6 +459,49 @@ api.interceptors.response.use(
       data: error.response?.data,
       message: error.message
     });
+    
+    // Check if user is blocked
+    if (error.response?.status === 403 && error.response?.data?.isBlocked) {
+      console.log('🚫 BLOCKED USER DETECTED - Status 403 with isBlocked flag');
+      
+      // Check if current user is admin - admins should not be processed by blocked user detection
+      let currentUser = null;
+      try {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          currentUser = JSON.parse(userStr);
+          console.log('👤 Found user in localStorage:', currentUser);
+          
+          // Skip blocked user processing for admin users
+          if (currentUser.role === 'admin') {
+            console.log('🔑 User is admin - skipping blocked user processing');
+            return Promise.reject(error); // Pass through the original error for admin users
+          }
+        }
+      } catch (parseError) {
+        console.error('❌ Error parsing user from localStorage:', parseError);
+      }
+      
+      // Immediately set the flag to prevent more requests (only for non-admin users)
+      if (!hasHandledBlockedUser) {
+        hasHandledBlockedUser = true;
+        console.log('🛑 First time blocked user detection - processing...');
+        
+        // Call global blocked user handler if available
+        if (globalBlockedUserHandler) {
+          console.log('📞 Calling global blocked user handler...');
+          globalBlockedUserHandler(error.response.data, currentUser);
+        } else {
+          console.error('❌ No global blocked user handler available!');
+        }
+      } else {
+        console.log('⚠️ Blocked user already handled, skipping duplicate processing');
+      }
+      
+      // Always reject but PRESERVE original error so callers can inspect response
+      return Promise.reject(error);
+    }
+    
     return Promise.reject(error);
   }
 );
@@ -473,6 +552,85 @@ export const matchingAPI = {
   // Invite volunteer to opportunity (NGO only)
   inviteVolunteer: async (opportunityId, volunteerId) => {
     const response = await api.post('/matching/invite', { opportunityId, volunteerId });
+    return response.data;
+  }
+};
+
+// Admin API
+export const adminAPI = {
+  // Profile management
+  getProfile: async () => {
+    const response = await api.get('/users/profile');
+    return response.data;
+  },
+  updateProfile: async (profileData) => {
+    const response = await api.put('/users/profile', profileData);
+    return response.data;
+  },
+
+  // Dashboard analytics
+  getDashboardAnalytics: async () => {
+    const response = await api.get('/admin/analytics');
+    return response.data;
+  },
+
+  // Analytics for WasteZeroAnalytics component (separate from dashboard)
+  getAnalytics: async (timeRange = 'month') => {
+    const response = await api.get(`/users/admin/analytics?timeRange=${timeRange}`);
+    return response.data;
+  },
+
+  getNGOAnalytics: async (ngoId, timeRange = 'month') => {
+    const response = await api.get(`/users/admin/analytics/ngo/${ngoId}?timeRange=${timeRange}`);
+    return response.data;
+  },
+
+  getVolunteerAnalytics: async (volunteerId) => {
+    const response = await api.get(`/users/admin/analytics/volunteer/${volunteerId}`);
+    return response.data;
+  },
+
+  getPlatformStats: async () => {
+    const response = await api.get('/admin/stats');
+    return response.data;
+  },
+
+  // User management
+  getAllUsers: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    const response = await api.get(`/admin/users?${queryString}`);
+    return response.data;
+  },
+
+  getUserDetails: async (userId) => {
+    const response = await api.get(`/admin/users/${userId}`);
+    return response.data;
+  },
+
+  toggleUserBlock: async (userId, reason = '') => {
+    const response = await api.patch(`/admin/users/${userId}/toggle-block`, { reason });
+    return response.data;
+  },
+
+  // Chat functionality
+  getAdminConversations: async () => {
+    const response = await api.get('/admin/conversations');
+    return response.data;
+  },
+
+  startConversation: async (userId) => {
+    const response = await api.post(`/admin/conversations/${userId}`);
+    return response.data;
+  },
+
+  getConversationMessages: async (conversationId, params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    const response = await api.get(`/admin/conversations/${conversationId}/messages?${queryString}`);
+    return response.data;
+  },
+
+  sendMessage: async (conversationId, content) => {
+    const response = await api.post(`/admin/conversations/${conversationId}/messages`, { content });
     return response.data;
   }
 };

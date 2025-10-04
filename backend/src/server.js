@@ -13,6 +13,7 @@ const ngoRoute = require('../routes/ngo.routes.js');
 const volunteerRoute = require('../routes/volunteer.routes.js');
 const notificationRoutes = require('../routes/notification.routes.js');
 const matchingRoutes = require('../routes/matching.routes.js');
+const adminRoutes = require('../routes/admin.routes.js');
 const connectDb = require('../lib/connectDb.js');
 
 // Import the integrated app and server from socket.js (from message-branch)
@@ -46,6 +47,7 @@ app.use('/api/ngo', ngoRoute);
 app.use('/api/volunteer', volunteerRoute);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/matching', matchingRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Graceful handling for body too large
 app.use((err, req, res, next) => {

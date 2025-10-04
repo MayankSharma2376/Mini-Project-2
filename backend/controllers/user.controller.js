@@ -2,6 +2,50 @@ const User = require("../models/user.model");
 const Opportunity = require('../models/opportunity.model');
 const Application = require('../models/application.model');
 
+// Get user profile (works for all roles)
+const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password -otp -otpExpires');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    res.json({ success: true, data: user });
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch profile' });
+  }
+};
+
+// Update user profile (works for all roles)
+const updateProfile = async (req, res) => {
+  try {
+    const { name, email, location, bio, skills, profileImage } = req.body;
+    const update = {};
+    
+    if (name !== undefined) update.name = name;
+    if (email !== undefined) update.email = email;
+    if (location !== undefined) update.location = location;
+    if (bio !== undefined) update.bio = bio;
+    if (skills !== undefined) update.skills = skills;
+    if (profileImage !== undefined) update.profileImage = profileImage;
+    
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      update,
+      { new: true, runValidators: true }
+    ).select('-password -otp -otpExpires');
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    res.json({ success: true, data: user, message: 'Profile updated successfully' });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ success: false, message: 'Failed to update profile', error: error.message });
+  }
+};
+
 const getUsersForSidebar = async (req, res) => {
     try {
         const loggedInUserId = req.user._id;
@@ -152,7 +196,15 @@ const getAdminAnalytics = async (req, res) => {
       {
         $group: {
           _id: '$createdBy',
-          ngoName: { $first: { $arrayElemAt: ['$ngoDetails.fullName', 0] } },
+          ngoName: { 
+            $first: { 
+              $ifNull: [
+                { $arrayElemAt: ['$ngoDetails.name', 0] },
+                { $arrayElemAt: ['$ngoDetails.fullName', 0] }
+              ]
+            }
+          },
+          ngoEmail: { $first: { $arrayElemAt: ['$ngoDetails.email', 0] } },
           totalEvents: { $sum: 1 },
           totalApplications: { $sum: { $size: '$applications' } },
           acceptedApplications: {
@@ -188,21 +240,150 @@ const getAdminAnalytics = async (req, res) => {
       percentage: Math.round((cat.count / totalEvents) * 100) || 0
     }));
 
-    // Recent platform activities
+    // Platform Growth Data - Daily login and user statistics
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const yesterdayStart = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    
+    const [usersToday, usersYesterday, newUsersToday] = await Promise.all([
+      User.countDocuments(),  // Total users (simulating "logged in today")
+      User.countDocuments({ createdAt: { $lt: todayStart } }), // Users before today
+      User.countDocuments({ createdAt: { $gte: todayStart } }) // New users today
+    ]);
+    
+    const platformGrowth = {
+      totalUsers: usersToday,
+      newUsers: newUsersToday,
+      oldUsers: usersYesterday,
+      growthRate: usersYesterday > 0 ? ((usersToday - usersYesterday) / usersYesterday * 100).toFixed(1) : '0'
+    };
+
+    // Comprehensive Recent Platform Activities
+    const activities = [];
+
+    // Get recent events created (last 20)
+    const recentEvents = await Opportunity.find()
+      .populate('createdBy', 'name fullName email role')
+      .sort({ createdAt: -1 })
+      .limit(20);
+
+    // Get recent applications (last 20)
     const recentApplications = await Application.find()
-      .populate('volunteerId', 'fullName email')
-      .populate('opportunityId', 'title category')
+      .populate({
+        path: 'volunteerId',
+        select: 'name fullName email role',
+        model: 'User'
+      })
+      .populate({
+        path: 'opportunityId', 
+        select: 'title category createdBy',
+        model: 'Opportunity'
+      })
+      .sort({ createdAt: -1 })
+      .limit(20);
+
+    // Get recent user registrations (last 10)
+    const recentUsers = await User.find()
       .sort({ createdAt: -1 })
       .limit(10);
 
-    const recentActivities = recentApplications.map(app => ({
-      id: app._id,
-      type: 'Application',
-      user: app.volunteerId?.fullName || 'Unknown',
-      event: app.opportunityId?.title || 'Unknown Event',
-      category: app.opportunityId?.category || 'Other',
-      status: app.status,
-      date: app.createdAt
+    // Add event creation activities
+    recentEvents.forEach(event => {
+      if (event.createdBy) {
+        activities.push({
+          id: `event-${event._id}`,
+          type: 'Event Created',
+          description: `${event.createdBy.name || event.createdBy.fullName || 'NGO'} created event "${event.title}"`,
+          user: event.createdBy.name || event.createdBy.fullName || 'NGO',
+          userRole: event.createdBy.role || 'ngo',
+          event: event.title,
+          category: event.category || 'Other',
+          status: event.status || 'active',
+          date: event.createdAt,
+          icon: 'calendar'
+        });
+      }
+    });
+
+    // Add application activities
+    recentApplications
+      .filter(app => app.volunteerId && app.opportunityId)
+      .forEach(app => {
+        const actionText = app.status === 'accepted' ? 'accepted to' : 
+                          app.status === 'rejected' ? 'was rejected from' : 'applied for';
+        
+        activities.push({
+          id: `app-${app._id}`,
+          type: 'Application',
+          description: `${app.volunteerId.name || app.volunteerId.fullName || 'Volunteer'} ${actionText} "${app.opportunityId.title}"`,
+          user: app.volunteerId.name || app.volunteerId.fullName || 'Volunteer',
+          userRole: app.volunteerId.role || 'volunteer',
+          event: app.opportunityId.title,
+          category: app.opportunityId.category || 'Other',
+          status: app.status,
+          date: app.createdAt,
+          icon: app.status === 'accepted' ? 'check' : app.status === 'rejected' ? 'x' : 'user'
+        });
+      });
+
+    // Add user registration activities
+    recentUsers.forEach(user => {
+      activities.push({
+        id: `user-${user._id}`,
+        type: 'User Registration',
+        description: `${user.name || user.fullName || 'New user'} joined as ${user.role}`,
+        user: user.name || user.fullName || 'New user',
+        userRole: user.role,
+        event: 'Platform',
+        category: 'Registration',
+        status: 'completed',
+        date: user.createdAt,
+        icon: 'userPlus'
+      });
+    });
+
+    // Sort all activities by date and take the most recent 15
+    const recentActivities = activities
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 15);
+
+    // Transform data for frontend compatibility
+    const monthlyData = (eventActivityData || []).map((item, index) => ({
+      month: item?.month || 'N/A',
+      events: item?.events || 0,
+      applications: item?.applications || 0,
+      accepted: Math.floor((item?.applications || 0) * 0.7), // Estimate 70% acceptance rate
+      volunteers: userGrowthData?.[index]?.volunteers || 0,
+      waste: (item?.events || 0) * 15, // Estimate 15kg waste per event
+      hours: (item?.events || 0) * 4 // Estimate 4 hours per event
+    }));
+
+    // Transform category distribution to activity type data format
+    const activityTypeData = (categoryDistribution || []).map(cat => ({
+      name: cat?.name || 'Other',
+      value: cat?.percentage || 0,
+      count: cat?.value || 0
+    }));
+
+    // Keep original topNGOs data AND create topVolunteers format for compatibility
+    const topNGOsData = (topNGOs || []).map((ngo) => ({
+      id: ngo._id,
+      name: ngo?.ngoName || 'Unknown NGO',
+      email: ngo?.ngoEmail || 'No email',
+      totalEvents: ngo?.totalEvents || 0,
+      totalApplications: ngo?.totalApplications || 0,
+      acceptedApplications: ngo?.acceptedApplications || 0
+    }));
+
+    // Transform top NGOs to top volunteers format for backward compatibility
+    const topVolunteers = (topNGOs || []).map((ngo, index) => ({
+      id: ngo._id || (index + 1),
+      name: ngo?.ngoName || 'Unknown NGO',
+      eventsParticipated: ngo?.totalEvents || 0,
+      totalHours: (ngo?.totalEvents || 0) * 4 // Estimate 4 hours per event
     }));
 
     res.json({
@@ -224,11 +405,15 @@ const getAdminAnalytics = async (req, res) => {
           treesPlanted,
           co2Saved
         },
+        platformGrowth,
+        monthlyData,
+        activityTypeData,
+        topVolunteers,
+        topNGOs: topNGOsData,
+        recentActivities,
         userGrowthData,
         eventActivityData,
-        topNGOs,
         categoryDistribution,
-        recentActivities,
         timeRange
       }
     });
@@ -248,7 +433,7 @@ const getNGOAnalytics = async (req, res) => {
     const { timeRange = 'month' } = req.query;
 
     // Get NGO details
-    const ngo = await User.findById(ngoId).select('fullName email createdAt bio role');
+    const ngo = await User.findById(ngoId).select('name fullName email createdAt bio role');
     
     if (!ngo || ngo.role !== 'ngo') {
       return res.status(404).json({
@@ -282,8 +467,8 @@ const getNGOAnalytics = async (req, res) => {
     const applications = await Application.find({
       opportunityId: { $in: eventIds },
       createdAt: { $gte: startDate }
-    }).populate('volunteerId', 'fullName email')
-      .populate('opportunityId', 'title category date');
+    }).populate('volunteerId', 'name fullName email')
+      .populate('opportunityId', 'title category date location');
 
     // Calculate statistics
     const totalEvents = ngoEvents.length;
@@ -306,12 +491,88 @@ const getNGOAnalytics = async (req, res) => {
     const treesPlanted = Math.floor(acceptedApplications * 0.8);
     const co2Saved = Math.floor(wasteCollected * 0.5);
 
+    // Generate monthly activity data for charts
+    const monthlyData = [];
+    const currentDate = new Date();
+    
+    for (let i = 11; i >= 0; i--) {
+      const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+      const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() - i + 1, 0, 23, 59, 59);
+      
+      // Get events created in this month
+      const monthEvents = ngoEvents.filter(event => 
+        event.createdAt >= monthStart && event.createdAt <= monthEnd
+      );
+      
+      // Get applications for this month
+      const monthApplications = applications.filter(app => 
+        app.createdAt >= monthStart && app.createdAt <= monthEnd
+      );
+      
+      monthlyData.push({
+        month: monthStart.toLocaleDateString('en-US', { month: 'short' }),
+        events: monthEvents.length,
+        applications: monthApplications.length,
+        accepted: monthApplications.filter(app => app.status === 'accepted').length,
+        volunteers: monthApplications.filter(app => app.status === 'accepted').length, // Unique volunteers for this month
+        waste: monthEvents.length * 15, // Estimate waste collected per event
+        hours: monthApplications.filter(app => app.status === 'accepted').length * 4 // Hours per accepted application
+      });
+    }
+
+    // Generate activity type data (categories of events)
+    const categoryCount = {};
+    ngoEvents.forEach(event => {
+      const category = event.category || 'Other';
+      categoryCount[category] = (categoryCount[category] || 0) + 1;
+    });
+
+    const activityTypeData = Object.entries(categoryCount).map(([category, count]) => ({
+      name: category,
+      value: Math.round((count / totalEvents) * 100) || 0,
+      count: count
+    }));
+
+    // Enhanced recent activities - include both events and applications
+    const recentActivities = [];
+    
+    // Add recent events created
+    ngoEvents.slice(0, 5).forEach(event => {
+      recentActivities.push({
+        id: event._id,
+        type: 'Event Created',
+        event: event.title,
+        status: event.status,
+        date: event.createdAt,
+        location: event.location || 'Unknown'
+      });
+    });
+    
+    // Add recent applications
+    applications.slice(0, 5).forEach(app => {
+      if (app.volunteerId && app.opportunityId) {
+        recentActivities.push({
+          id: app._id,
+          type: 'Application',
+          user: app.volunteerId?.name || app.volunteerId?.fullName || 'Unknown',
+          event: app.opportunityId?.title || 'Unknown Event',
+          status: app.status,
+          date: app.createdAt,
+          location: app.opportunityId?.location || 'Unknown'
+        });
+      }
+    });
+    
+    // Sort by date and limit to 10 most recent
+    recentActivities.sort((a, b) => new Date(b.date) - new Date(a.date));
+    const limitedActivities = recentActivities.slice(0, 10);
+
     res.json({
       success: true,
       data: {
         ngo: {
           id: ngo._id,
-          name: ngo.fullName,
+          name: ngo.name || ngo.fullName,
           email: ngo.email,
           joinDate: ngo.createdAt,
           bio: ngo.bio || 'No bio available'
@@ -328,8 +589,26 @@ const getNGOAnalytics = async (req, res) => {
           totalVolunteerHours,
           wasteCollected,
           treesPlanted,
+          co2Saved,
+          impactScore: Math.floor((totalEvents * 50) + (totalVolunteerHours * 10) + (wasteCollected * 2))
+        },
+        overview: {
+          totalEvents,
+          activeEvents,
+          completedEvents,
+          totalApplications,
+          acceptedApplications,
+          pendingApplications,
+          rejectedApplications,
+          totalVolunteers,
+          totalVolunteerHours,
+          wasteCollected,
+          treesPlanted,
           co2Saved
         },
+        monthlyData,
+        activityTypeData,
+        recentActivities: limitedActivities,
         events: ngoEvents.slice(0, 10).map(event => ({
           id: event._id,
           title: event.title,
@@ -341,7 +620,7 @@ const getNGOAnalytics = async (req, res) => {
         })),
         recentApplications: applications.slice(0, 10).map(app => ({
           id: app._id,
-          volunteer: app.volunteerId?.fullName || 'Unknown',
+          volunteer: app.volunteerId?.name || app.volunteerId?.fullName || 'Unknown',
           event: app.opportunityId?.title || 'Unknown Event',
           status: app.status,
           date: app.createdAt
@@ -364,7 +643,7 @@ const getVolunteerAnalyticsForAdmin = async (req, res) => {
 
     // Get volunteer details
     const volunteer = await User.findById(volunteerId)
-      .select('fullName email createdAt skills location bio role');
+      .select('name fullName email createdAt skills location bio role');
     
     if (!volunteer || volunteer.role !== 'volunteer') {
       return res.status(404).json({
@@ -399,14 +678,14 @@ const getVolunteerAnalyticsForAdmin = async (req, res) => {
     
     const ngosWorkedWith = await User.find({
       _id: { $in: ngoIds }
-    }).select('fullName email').limit(5);
+    }).select('name fullName email').limit(5);
 
     res.json({
       success: true,
       data: {
         volunteer: {
           id: volunteer._id,
-          name: volunteer.fullName,
+          name: volunteer.name || volunteer.fullName,
           email: volunteer.email,
           joinDate: volunteer.createdAt,
           skills: volunteer.skills || [],
@@ -445,6 +724,8 @@ const getVolunteerAnalyticsForAdmin = async (req, res) => {
 };
 
 module.exports = {
+    getProfile,
+    updateProfile,
     getUsersForSidebar,
     getAdminAnalytics,
     getNGOAnalytics,

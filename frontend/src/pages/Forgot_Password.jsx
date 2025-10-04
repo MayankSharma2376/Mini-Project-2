@@ -15,14 +15,14 @@ function Forgot_Password() {
   );
   
   const EyeIcon = ({ onClick }) => (
-    <svg onClick={onClick} className="w-5 h-5 text-gray-400 cursor-pointer hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg onClick={onClick} className="w-5 h-5 text-gray-400 dark:text-gray-500 cursor-pointer hover:text-gray-600 dark:hover:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
     </svg>
   );
 
   const EyeOffIcon = ({ onClick }) => (
-    <svg onClick={onClick} className="w-5 h-5 text-gray-400 cursor-pointer hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg onClick={onClick} className="w-5 h-5 text-gray-400 dark:text-gray-500 cursor-pointer hover:text-gray-600 dark:hover:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 .946-3.112 3.586-5.545 6.89-6.334M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3l18 18"></path>
     </svg>
@@ -273,13 +273,13 @@ function Forgot_Password() {
       </div>
 
       {/* Right Panel: Password Reset Form */}
-      <div className="w-full lg:w-1/2 bg-gray-50 flex flex-col max-h-screen">
+      <div className="w-full lg:w-1/2 bg-gray-50 dark:bg-gray-900 flex flex-col max-h-screen">
         {/* Fixed Header */}
-        <div className="flex-shrink-0 p-4 lg:p-6 pb-2 bg-gray-50 border-b border-gray-200">
+        <div className="flex-shrink-0 p-4 lg:p-6 pb-2 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
           <div className="max-w-sm mx-auto">
             <button 
               onClick={() => navigate("/login")}
-              className="flex items-center gap-2 text-[#588157] hover:text-[#4f685b] font-medium text-sm transition-colors"
+              className="flex items-center gap-2 text-[#588157] dark:text-green-400 hover:text-[#4f685b] dark:hover:text-green-500 font-medium text-sm transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
@@ -298,30 +298,30 @@ function Forgot_Password() {
               <div className="space-y-6">
                 {/* Form Header */}
                 <div className="text-center">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">
                     Forgot Password
                   </h2>
-                  <p className="text-gray-500 text-sm">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
                     Enter your registered email address. We'll send you a 4-digit OTP to verify your identity.
                   </p>
                 </div>
 
                 {/* Error Message */}
                 {error && (
-                  <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                  <div className="p-3 bg-red-100 dark:bg-red-900/50 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg text-sm">
                     {error}
                   </div>
                 )}
 
                 {/* Email Input */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Email Address</label>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Email Address</label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black placeholder-gray-500"
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black dark:text-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400"
                   />
                 </div>
 
@@ -340,7 +340,7 @@ function Forgot_Password() {
                   <button 
                     type="button" 
                     onClick={() => navigate('/login')}
-                    className="text-sm text-[#588157] hover:underline"
+                    className="text-sm text-[#588157] dark:text-green-400 hover:underline"
                   >
                     Back to Login
                   </button>
@@ -353,22 +353,22 @@ function Forgot_Password() {
               <div className="space-y-6">
                 {/* Form Header */}
                 <div className="text-center">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-2">Enter OTP</h2>
-                  <p className="text-gray-500 text-sm">
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">Enter OTP</h2>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
                     We've sent a 4-digit verification code to your email address.
                   </p>
                 </div>
 
                 {/* Error Message */}
                 {error && (
-                  <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                  <div className="p-3 bg-red-100 dark:bg-red-900/50 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg text-sm">
                     {error}
                   </div>
                 )}
 
                 {/* OTP Input */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-3 text-center">Verification Code</label>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-3 text-center">Verification Code</label>
                   <div className="flex justify-center gap-3 mb-4">
                     {otp.map((digit, index) => (
                       <input
@@ -379,7 +379,7 @@ function Forgot_Password() {
                         ref={(el) => (inputs.current[index] = el)}
                         onChange={(e) => handleChange(e.target.value, index)}
                         onKeyDown={(e) => handleKeyDown(e, index)}
-                        className="w-12 h-12 text-center text-lg font-bold border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-[#588157] focus:outline-none text-black"
+                        className="w-12 h-12 text-center text-lg font-bold border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-[#588157] focus:outline-none text-black dark:text-white dark:bg-gray-800"
                       />
                     ))}
                   </div>
@@ -402,30 +402,30 @@ function Forgot_Password() {
               <div className="space-y-6">
                 {/* Form Header */}
                 <div className="text-center">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">
                     Reset Password
                   </h2>
-                  <p className="text-gray-500 text-sm">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
                     Create a strong new password (at least 6 characters). Make sure both fields match.
                   </p>
                 </div>
 
                 {/* Error Message */}
                 {error && (
-                  <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                  <div className="p-3 bg-red-100 dark:bg-red-900/50 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg text-sm">
                     {error}
                   </div>
                 )}
 
                 {/* New Password */}
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-600 mb-1">New Password</label>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">New Password</label>
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter new password"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black placeholder-gray-500 password-input"
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black dark:text-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400 password-input"
                     autoComplete="new-password"
                   />
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pt-6">
@@ -439,13 +439,13 @@ function Forgot_Password() {
 
                 {/* Confirm Password */}
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Confirm Password</label>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Confirm Password</label>
                   <input
                     type={showConfirmPassword ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm new password"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black placeholder-gray-500 password-input"
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black dark:text-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400 password-input"
                     autoComplete="new-password"
                   />
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pt-6">

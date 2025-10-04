@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
+import { resetBlockedUserFlag } from '../services/api';
 import {
   LayoutDashboard,
   Leaf,
@@ -20,6 +21,9 @@ const Side = () => {
     // Clear localStorage
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+
+    // Reset blocked user flag to prevent flickering
+    resetBlockedUserFlag();
 
     // Show success message
     toast.success('Logged out successfully!');
@@ -42,11 +46,11 @@ const Side = () => {
   const basePath = location.pathname.split('/')[1];
 
   return (
-    <aside className="hidden lg:flex fixed left-0 top-0 w-64 h-screen bg-[#344e41] border-r border-[#588157] shadow-lg flex-col z-30">
+    <aside className="hidden lg:flex fixed left-0 top-0 w-64 h-screen bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-lg flex-col z-30">
 
 
       {/* Spacer for navbar */}
-      <div className="h-16 bg-[#344e41]"></div>
+      <div className="h-16 bg-white dark:bg-gray-900"></div>
 
       {/* Navigation Menu */}
       <nav className="p-4 flex-1 overflow-y-auto">
@@ -67,8 +71,8 @@ const Side = () => {
                 <Link
                   to={fullPath} // Use the dynamically created full path
                   className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 group cursor-pointer ${isActive
-                      ? 'bg-[#588157] text-white shadow-md'
-                      : 'text-[#dad7cd] hover:bg-[#588157] hover:text-white'
+                      ? 'bg-green-600 dark:bg-green-700 text-white shadow-md'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-gray-800 hover:text-green-600 dark:hover:text-green-400'
                     }`}
                 >
                   <IconComponent className="w-5 h-5" />
@@ -85,7 +89,7 @@ const Side = () => {
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-white bg-red-500 hover:bg-red-600 transition-all duration-200 group cursor-pointer"
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-white bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 transition-all duration-200 group cursor-pointer"
           >
             <LogOut className="w-5 h-5" />
             <span className="font-medium">Logout</span>

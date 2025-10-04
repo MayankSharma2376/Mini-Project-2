@@ -16,7 +16,9 @@ import {
   Heart,
   TrendingUp,
   Target,
-  Settings
+  Settings,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import StatCard from '../components/StatCard';
@@ -48,6 +50,24 @@ export default function VolunteerDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [enlargedImage, setEnlargedImage] = useState(null);
+  // const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+
+  // // --- Dark Mode Logic ---
+  // const toggleTheme = () => {
+  //     const newTheme = theme === 'light' ? 'dark' : 'light';
+  //     setTheme(newTheme);
+  //     localStorage.setItem('theme', newTheme);
+  // };
+
+  // useEffect(() => {
+  //     if (theme === 'dark') {
+  //         document.documentElement.classList.add('dark');
+  //     } else {
+  //         document.documentElement.classList.remove('dark');
+  //     }
+  // }, [theme]);
+  // // --- End Dark Mode Logic ---
+
 
   // Load dashboard data
   useEffect(() => {
@@ -87,29 +107,29 @@ export default function VolunteerDashboard() {
         })
       ]);
 
-      console.log('Stats response:', statsResponse);
-      console.log('Opportunities response:', opportunitiesResponse);
-      console.log('Applications response:', applicationsResponse);
-      console.log('Notifications response:', notificationsResponse);
+console.log('Stats response:', statsResponse);
+      console.log('Opportunities response:', opportunitiesResponse);
+      console.log('Applications response:', applicationsResponse);
+      console.log('Notifications response:', notificationsResponse);
 
-      // Extract data from API responses
+      // Extract data from API responses
       const statsData = statsResponse.data || statsResponse;
       const opportunitiesData = opportunitiesResponse.data || opportunitiesResponse;
       const applicationsData = applicationsResponse.data || applicationsResponse;
       const notificationsData = notificationsResponse.data || [];
 
-      console.log('Processed stats:', statsData);
-      console.log('Processed opportunities:', opportunitiesData);
-      console.log('Processed applications:', applicationsData);
-      console.log('Processed notifications:', notificationsData);
-      
-      // Debug: Check application structure
-      if (applicationsData && applicationsData.length > 0) {
-        console.log('Sample application structure:', applicationsData[0]);
-        console.log('Sample application opportunityId:', applicationsData[0].opportunityId);
-      }
+       console.log('Processed stats:', statsData);
+      console.log('Processed opportunities:', opportunitiesData);
+      console.log('Processed applications:', applicationsData);
+      console.log('Processed notifications:', notificationsData);
+      
+      // Debug: Check application structure
+      if (applicationsData && applicationsData.length > 0) {
+        console.log('Sample application structure:', applicationsData[0]);
+        console.log('Sample application opportunityId:', applicationsData[0].opportunityId);
+      }
 
-      // Extract upcoming events from accepted applications
+      // Extract upcoming events from accepted applications
       const acceptedApplications = applicationsData.filter(app => 
         app.status === 'accepted' && 
         app.opportunityId && 
@@ -134,14 +154,14 @@ export default function VolunteerDashboard() {
       setNotifications(notificationsData);
       
       console.log('Volunteer dashboard data loaded successfully');
-      console.log('Upcoming events:', upcomingEventsData);
+       console.log('Upcoming events:', upcomingEventsData);
     } catch (error) {
       console.error('Error loading volunteer dashboard data:', error);
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
+       console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       toast.error(`Failed to load dashboard data: ${error.message}`);
     } finally {
       setLoading(false);
@@ -200,9 +220,9 @@ export default function VolunteerDashboard() {
   // Filter opportunities based on search and category
   const filteredOpportunities = opportunities.filter(opportunity => {
     const matchesSearch = opportunity.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         opportunity.description.toLowerCase().includes(searchTerm.toLowerCase());
+                          opportunity.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === 'all' || opportunity.category === filterCategory;
-    // Show both active and inactive events
+     // Show both active and inactive events
     return matchesSearch && matchesCategory;
   });
 
@@ -249,32 +269,32 @@ export default function VolunteerDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border dark:border-gray-700">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button
             onClick={() => setActiveTab('opportunities')}
-            className="p-4 text-left border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
+            className="p-4 text-left border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
           >
             <div className="flex items-center mb-2">
               <Search className="h-8 w-8 text-green-600" />
               <Target className="h-4 w-4 text-green-500 ml-1" />
             </div>
-            <h3 className="font-medium text-gray-900">Browse Smart Opportunities</h3>
-            <p className="text-sm text-gray-500">Matched opportunities appear first based on your preferences</p>
+            <h3 className="font-medium text-gray-900 dark:text-gray-100">Browse Smart Opportunities</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Matched opportunities appear first based on your preferences</p>
           </button>
           <button
             onClick={() => setActiveTab('applications')}
-            className="p-4 text-left border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
+            className="p-4 text-left border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
           >
             <Bell className="h-8 w-8 text-blue-600 mb-2" />
-            <h3 className="font-medium text-gray-900">My Applications</h3>
-            <p className="text-sm text-gray-500">Track your applications</p>
+            <h3 className="font-medium text-gray-900 dark:text-gray-100">My Applications</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Track your applications</p>
           </button>
-          <button className="p-4 text-left border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors">
+          <button onClick={() => navigate('/volunteer/my-profile')} className="p-4 text-left border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors">
             <Award className="h-8 w-8 text-purple-600 mb-2" />
-            <h3 className="font-medium text-gray-900">View Profile</h3>
-            <p className="text-sm text-gray-500">Update your information</p>
+            <h3 className="font-medium text-gray-900 dark:text-gray-100">View Profile</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Update your information</p>
           </button>
         </div>
       </div>
@@ -304,14 +324,14 @@ export default function VolunteerDashboard() {
   const renderOpportunitiesTab = () => (
     <div className="space-y-6">
       {/* Header with explanation */}
-      <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4 border border-green-200">
+      <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-gray-800 dark:to-gray-800/50 rounded-lg p-4 border border-green-200 dark:border-green-800">
         <div className="flex items-center space-x-2 mb-2">
-          <Target className="h-5 w-5 text-green-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Smart Matching Active</h3>
+          <Target className="h-5 w-5 text-green-600 dark:text-green-400" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Smart Matching Active</h3>
         </div>
-        <p className="text-sm text-gray-700">
+        <p className="text-sm text-gray-700 dark:text-gray-300">
           Opportunities that match your preferences (location, waste types, skills) appear first with 
-          <span className="inline-flex items-center mx-1 px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded">
+          <span className="inline-flex items-center mx-1 px-2 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 rounded">
             <Star className="h-3 w-3 mr-1" />
             RECOMMENDED
           </span>
@@ -320,7 +340,7 @@ export default function VolunteerDashboard() {
       </div>
 
       {/* Search and Filter */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border dark:border-gray-700">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
@@ -330,7 +350,7 @@ export default function VolunteerDashboard() {
                 placeholder="Search opportunities..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:placeholder-gray-400"
               />
             </div>
           </div>
@@ -339,7 +359,7 @@ export default function VolunteerDashboard() {
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
               <option value="all">All Categories</option>
               <option value="environmental">Environmental</option>
@@ -355,8 +375,8 @@ export default function VolunteerDashboard() {
       {/* Opportunities Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredOpportunities.map(opportunity => (
-          <div key={opportunity._id} className={`bg-white rounded-lg shadow-sm border overflow-hidden transition-all hover:shadow-md ${
-            opportunity.isMatched ? 'border-green-300 ring-2 ring-green-100' : 'border-gray-200'
+          <div key={opportunity._id} className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border overflow-hidden transition-all hover:shadow-md ${
+            opportunity.isMatched ? 'border-green-300 dark:border-green-600 ring-2 ring-green-100 dark:ring-green-900/50' : 'border-gray-200 dark:border-gray-700'
           }`}>
             {/* Match Score Badge */}
             {opportunity.isMatched && (
@@ -390,17 +410,17 @@ export default function VolunteerDashboard() {
             <div className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{opportunity.title}</h3>
-                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">{opportunity.description}</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{opportunity.title}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">{opportunity.description}</p>
                 </div>
                 <div className="flex flex-col items-end space-y-1">
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    opportunity.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    opportunity.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
                   }`}>
                     {opportunity.status}
                   </span>
                   {opportunity.isMatched && (
-                    <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full flex items-center">
+                    <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300 rounded-full flex items-center">
                       <Target className="h-3 w-3 mr-1" />
                       Match
                     </span>
@@ -415,28 +435,28 @@ export default function VolunteerDashboard() {
                     {opportunity.wasteTypes.slice(0, 3).map((wasteType, index) => (
                       <span 
                         key={index}
-                        className="inline-flex items-center px-2 py-1 text-xs bg-green-100 text-green-800 rounded"
+                        className="inline-flex items-center px-2 py-1 text-xs bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 rounded"
                       >
                         {wasteType}
                       </span>
                     ))}
                     {opportunity.wasteTypes.length > 3 && (
-                      <span className="text-xs text-gray-500">+{opportunity.wasteTypes.length - 3} more</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">+{opportunity.wasteTypes.length - 3} more</span>
                     )}
                   </div>
                 </div>
               )}
 
               <div className="space-y-2 mb-4">
-                <div className="flex items-center text-sm text-gray-500">
+                <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                   <MapPin className="h-4 w-4 mr-2" />
                   {opportunity.location}
                 </div>
-                <div className="flex items-center text-sm text-gray-500">
+                <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                   <Calendar className="h-4 w-4 mr-2" />
                   {new Date(opportunity.date).toLocaleDateString()}
                 </div>
-                <div className="flex items-center text-sm text-gray-500">
+                <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                   <Users className="h-4 w-4 mr-2" />
                   {opportunity.registeredCount}/{opportunity.capacity} volunteers
                 </div>
@@ -444,26 +464,26 @@ export default function VolunteerDashboard() {
 
               {/* Match breakdown for matched opportunities */}
               {opportunity.isMatched && opportunity.matchReasons && (
-                <div className="mb-4 p-3 bg-green-50 rounded-lg">
-                  <h4 className="text-xs font-semibold text-green-800 mb-2">Why this matches you:</h4>
+                <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <h4 className="text-xs font-semibold text-green-800 dark:text-green-300 mb-2">Why this matches you:</h4>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="flex items-center">
-                      <div className="w-8 bg-gray-200 rounded-full h-1 mr-2">
+                      <div className="w-8 bg-gray-200 dark:bg-gray-700 rounded-full h-1 mr-2">
                         <div 
                           className="bg-green-500 h-1 rounded-full" 
                           style={{ width: `${opportunity.matchReasons.location}%` }}
                         ></div>
                       </div>
-                      <span className="text-gray-600">Location {opportunity.matchReasons.location}%</span>
+                      <span className="text-gray-600 dark:text-gray-400">Location {opportunity.matchReasons.location}%</span>
                     </div>
                     <div className="flex items-center">
-                      <div className="w-8 bg-gray-200 rounded-full h-1 mr-2">
+                      <div className="w-8 bg-gray-200 dark:bg-gray-700 rounded-full h-1 mr-2">
                         <div 
                           className="bg-blue-500 h-1 rounded-full" 
                           style={{ width: `${opportunity.matchReasons.wasteTypes}%` }}
                         ></div>
                       </div>
-                      <span className="text-gray-600">Interest {opportunity.matchReasons.wasteTypes}%</span>
+                      <span className="text-gray-600 dark:text-gray-400">Interest {opportunity.matchReasons.wasteTypes}%</span>
                     </div>
                   </div>
                 </div>
@@ -471,77 +491,76 @@ export default function VolunteerDashboard() {
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                  <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 rounded-full">
                     {opportunity.category}
                   </span>
                   {opportunity.requiredExperienceLevel && (
-                    <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">
+                    <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-600 dark:text-gray-200 rounded-full">
                       {opportunity.requiredExperienceLevel}
                     </span>
                   )}
                 </div>
                 {(() => {
                   const application = applications.find(app => {
-                    // Handle both populated and non-populated opportunityId
                     const appOpportunityId = app.opportunityId?._id || app.opportunityId;
                     return appOpportunityId === opportunity._id;
                   });
                 
-                if (application) {
-                  if (application.status === 'pending') {
+                  if (application) {
+                    if (application.status === 'pending') {
+                      return (
+                        <button
+                          disabled
+                          className="px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-lg cursor-not-allowed"
+                        >
+                          Applied - Pending
+                        </button>
+                      );
+                    } else if (application.status === 'accepted') {
+                      return (
+                        <button
+                          disabled
+                          className="px-4 py-2 text-sm font-medium text-white bg-green-500 rounded-lg cursor-not-allowed"
+                        >
+                          ✓ Accepted
+                        </button>
+                      );
+                    } else if (application.status === 'rejected') {
+                      return (
+                        <button
+                          disabled
+                          className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg cursor-not-allowed"
+                        >
+                          Rejected
+                        </button>
+                      );
+                    }
+                  }
+
+                  // If opportunity is inactive, show disabled button
+                  if (opportunity.status !== 'active') {
                     return (
                       <button
                         disabled
-                        className="px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-lg cursor-not-allowed"
+                        className="px-4 py-2 text-sm font-medium text-white bg-gray-400 rounded-lg cursor-not-allowed"
                       >
-                        Applied - Pending
-                      </button>
-                    );
-                  } else if (application.status === 'accepted') {
-                    return (
-                      <button
-                        disabled
-                        className="px-4 py-2 text-sm font-medium text-white bg-green-500 rounded-lg cursor-not-allowed"
-                      >
-                        ✓ Accepted
-                      </button>
-                    );
-                  } else if (application.status === 'rejected') {
-                    return (
-                      <button
-                        disabled
-                        className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg cursor-not-allowed"
-                      >
-                        Rejected
+                        Event Inactive
                       </button>
                     );
                   }
-                }
-                
-                // If opportunity is inactive, show disabled button
-                if (opportunity.status !== 'active') {
+                  
                   return (
                     <button
-                      disabled
-                      className="px-4 py-2 text-sm font-medium text-white bg-gray-400 rounded-lg cursor-not-allowed"
+                      onClick={() => handleApplyForOpportunity(opportunity._id)}
+                      disabled={opportunity.isFull || loading || applyingTo === opportunity._id}
+                      className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
                     >
-                      Event Inactive
+                      {applyingTo === opportunity._id ? 'Applying...' : opportunity.isFull ? 'Full' : 'Apply'}
                     </button>
                   );
-                }
-                
-                return (
-                  <button
-                    onClick={() => handleApplyForOpportunity(opportunity._id)}
-                    disabled={opportunity.isFull || loading || applyingTo === opportunity._id}
-                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  >
-                    {applyingTo === opportunity._id ? 'Applying...' : opportunity.isFull ? 'Full' : 'Apply'}
-                  </button>
-                );
-              })()}
+                })()}
+              </div>
             </div>
-          </div>
           </div>
         ))}
       </div>
@@ -549,8 +568,8 @@ export default function VolunteerDashboard() {
       {filteredOpportunities.length === 0 && (
         <div className="text-center py-12">
           <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No opportunities found</h3>
-          <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No opportunities found</h3>
+          <p className="text-gray-500 dark:text-gray-400">Try adjusting your search or filter criteria.</p>
         </div>
       )}
     </div>
@@ -558,22 +577,22 @@ export default function VolunteerDashboard() {
 
   const renderApplicationsTab = () => (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-sm">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">My Applications</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">My Applications</h2>
         </div>
 
         <div className="p-6">
           {applications.length > 0 ? (
             <div className="space-y-4">
               {applications.map(application => (
-                <div key={application._id} className="border border-gray-200 rounded-lg p-4">
+                <div key={application._id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="text-lg font-medium text-gray-900">{application.opportunityId?.title || application.opportunity?.title}</h3>
-                      <p className="text-sm text-gray-600 mb-2">{application.opportunityId?.description || application.opportunity?.description}</p>
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">{application.opportunityId?.title || application.opportunity?.title}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{application.opportunityId?.description || application.opportunity?.description}</p>
                       
-                      <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
+                      <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400 mb-3">
                         <div className="flex items-center">
                           <Calendar className="h-4 w-4 mr-1" />
                           {new Date(application.opportunityId?.date || application.opportunity?.date).toLocaleDateString()}
@@ -591,10 +610,10 @@ export default function VolunteerDashboard() {
 
                     <div className="flex items-center space-x-3">
                       <span className={`px-3 py-1 text-xs font-medium rounded-full ${
-                        application.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        application.status === 'accepted' ? 'bg-green-100 text-green-800' :
-                        application.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
+                        application.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300' :
+                        application.status === 'accepted' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' :
+                        application.status === 'rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300' :
+                        'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200'
                       }`}>
                         {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
                       </span>
@@ -602,7 +621,7 @@ export default function VolunteerDashboard() {
                       {application.status === 'pending' && (
                         <button
                           onClick={() => handleWithdrawApplication(application._id)}
-                          className="px-3 py-1 text-xs font-medium text-red-600 hover:text-red-800"
+                          className="px-3 py-1 text-xs font-medium text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                         >
                           Withdraw
                         </button>
@@ -611,8 +630,8 @@ export default function VolunteerDashboard() {
                   </div>
 
                   {application.reviewNote && (
-                    <div className="mt-3 p-3 bg-gray-50 rounded-md">
-                      <p className="text-sm text-gray-700">
+                    <div className="mt-3 p-3 bg-gray-100 dark:bg-gray-700 rounded-md">
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
                         <span className="font-medium">Review Note:</span> {application.reviewNote}
                       </p>
                     </div>
@@ -622,9 +641,9 @@ export default function VolunteerDashboard() {
             </div>
           ) : (
             <div className="text-center py-12">
-              <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No applications yet</h3>
-              <p className="text-gray-500 mb-4">Start applying for opportunities to see them here.</p>
+              <Bell className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No applications yet</h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">Start applying for opportunities to see them here.</p>
               <button
                 onClick={() => setActiveTab('opportunities')}
                 className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
@@ -640,7 +659,7 @@ export default function VolunteerDashboard() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-100">
+      <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
         <div className="flex items-center justify-center w-full">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
         </div>
@@ -649,23 +668,23 @@ export default function VolunteerDashboard() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100 font-sans">
+    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900 font-sans">
       <div className="flex flex-col flex-1 overflow-y-auto">
         <main className="p-4 md:p-6 lg:p-8">
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Volunteer Dashboard</h1>
-              <p className="mt-1 text-gray-600">Welcome back! Ready to make a difference?</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Volunteer Dashboard</h1>
+              <p className="mt-1 text-gray-600 dark:text-gray-400">Welcome back! Ready to make a difference?</p>
             </div>
             <div className="flex items-center space-x-2 mt-4 md:mt-0">
-              <div className="flex items-center space-x-1 bg-white rounded-lg p-1">
+              <div className="flex items-center space-x-1 bg-white dark:bg-gray-800 rounded-lg p-1 border dark:border-gray-700">
                 <button
                   onClick={() => setActiveTab('dashboard')}
                   className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                     activeTab === 'dashboard'
                       ? 'bg-green-600 text-white'
-                      : 'text-gray-600 hover:text-gray-900'
+                      : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
                   }`}
                 >
                   Dashboard
@@ -675,7 +694,7 @@ export default function VolunteerDashboard() {
                   className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                     activeTab === 'opportunities'
                       ? 'bg-green-600 text-white'
-                      : 'text-gray-600 hover:text-gray-900'
+                      : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
                   }`}
                 >
                   Opportunities
@@ -685,7 +704,7 @@ export default function VolunteerDashboard() {
                   className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                     activeTab === 'applications'
                       ? 'bg-green-600 text-white'
-                      : 'text-gray-600 hover:text-gray-900'
+                      : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
                   }`}
                 >
                   My Applications
@@ -695,7 +714,7 @@ export default function VolunteerDashboard() {
                   className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                     activeTab === 'analytics'
                       ? 'bg-green-600 text-white'
-                      : 'text-gray-600 hover:text-gray-900'
+                      : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
                   }`}
                 >
                   My Analytics
@@ -705,12 +724,15 @@ export default function VolunteerDashboard() {
                   className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                     activeTab === 'preferences'
                       ? 'bg-green-600 text-white'
-                      : 'text-gray-600 hover:text-gray-900'
+                      : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
                   }`}
                 >
                   Preferences
                 </button>
               </div>
+                {/* <button onClick={toggleTheme} className="p-3 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    {theme === 'light' ? <Moon className="w-5 h-5 text-gray-600" /> : <Sun className="w-5 h-5 text-yellow-400" />}
+                </button> */}
             </div>
           </div>
 
@@ -743,12 +765,12 @@ export default function VolunteerDashboard() {
             <img 
               src={enlargedImage} 
               alt="Enlarged view"
-              className="max-w-full max-h-full object-contain rounded-lg"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
               onClick={(e) => e.stopPropagation()}
             />
             <button
               onClick={() => setEnlargedImage(null)}
-              className="absolute top-4 right-4 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-75 transition-all"
+              className="absolute -top-2 -right-2 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-75 transition-all"
             >
               <XCircle className="h-6 w-6" />
             </button>

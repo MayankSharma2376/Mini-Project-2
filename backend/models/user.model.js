@@ -127,9 +127,28 @@ const userSchema = new mongoose.Schema({
   },
   emailChangeOtpExpires: {
     type: Date
+  },
+  
+  // Admin blocking functionality
+  isBlocked: {
+    type: Boolean,
+    default: false
+  },
+  blockReason: {
+    type: String,
+    default: null
+  },
+  blockedAt: {
+    type: Date,
+    default: null
+  },
+  blockedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
   }
   
-})
+}, { timestamps: true })
 
 userSchema.pre("save", async function (next) {
   if(!this.isModified("password")) return next();
