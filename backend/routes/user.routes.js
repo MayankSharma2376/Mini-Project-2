@@ -1,6 +1,8 @@
 const express = require("express");
 const protectRoute = require("../middleware/protectRoute.js");
 const { 
+  getProfile,
+  updateProfile,
   getUsersForSidebar, 
   getAdminAnalytics, 
   getNGOAnalytics, 
@@ -19,6 +21,10 @@ const requireAdminRole = (req, res, next) => {
   }
   next();
 };
+
+// Profile routes (available to all authenticated users)
+router.get("/profile", protectRoute, getProfile);
+router.put("/profile", protectRoute, updateProfile);
 
 // This route will be protected, meaning you must be logged in to see other users
 router.get("/", protectRoute, getUsersForSidebar);

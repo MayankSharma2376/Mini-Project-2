@@ -3,6 +3,8 @@ const express = require('express');
 const router = express.Router();
 
 const {
+  getProfile,
+  updateProfile,
   getDashboardStats,
   getRecentActivities,
   getMyEvents,
@@ -49,6 +51,10 @@ const requireNGORole = (req, res, next) => {
 router.get('/test', (req, res) => {
   res.json({ success: true, message: 'NGO routes working', user: req.user });
 });
+
+// Profile routes
+router.get('/profile', getProfile);
+router.put('/profile', updateProfile);
 
 // Dashboard routes
 router.get('/dashboard/stats', getDashboardStats);

@@ -26,7 +26,9 @@ import {
   Upload,
   Image,
   FileText,
-  AlertCircle
+  AlertCircle,
+  Moon,
+  Sun
 } from 'lucide-react'
 import { ngoAPI } from '../services/api'
 import { toast } from 'react-toastify'
@@ -36,13 +38,13 @@ import AttendanceManager from './AttendanceManager'
 import WasteZeroAnalytics from './AnalyticDashboard'
 
 // Modern CreateEventModal component with enhanced UI
-const CreateEventModal = memo(({ 
-  showModal, 
-  setShowModal, 
-  newEvent, 
-  handleNewEventChange, 
-  handleCreateEvent, 
-  loading 
+const CreateEventModal = memo(({
+  showModal,
+  setShowModal,
+  newEvent,
+  handleNewEventChange,
+  handleCreateEvent,
+  loading
 }) => {
   if (!showModal) return null;
 
@@ -53,7 +55,7 @@ const CreateEventModal = memo(({
         toast.error('Image size should be less than 5MB');
         return;
       }
-      
+
       const reader = new FileReader();
       reader.onload = (e) => {
         handleNewEventChange('imagePreview', e.target.result);
@@ -99,7 +101,7 @@ const CreateEventModal = memo(({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-3xl max-w-5xl w-full max-h-[95vh] overflow-hidden shadow-2xl">
+      <div className="bg-white dark:bg-gray-800 rounded-3xl max-w-5xl w-full max-h-[95vh] overflow-hidden shadow-2xl">
         {/* Header */}
         <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-6">
           <div className="flex justify-between items-center">
@@ -122,83 +124,83 @@ const CreateEventModal = memo(({
             <div className="flex items-center justify-center space-x-2 mb-6">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-semibold">1</div>
-                <span className="text-sm font-medium text-gray-700">Basic Info</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Basic Info</span>
               </div>
-              <div className="w-8 h-0.5 bg-gray-300"></div>
+              <div className="w-8 h-0.5 bg-gray-300 dark:bg-gray-600"></div>
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-semibold">2</div>
-                <span className="text-sm font-medium text-gray-700">Preferences</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Preferences</span>
               </div>
-              <div className="w-8 h-0.5 bg-gray-300"></div>
+              <div className="w-8 h-0.5 bg-gray-300 dark:bg-gray-600"></div>
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-semibold">3</div>
-                <span className="text-sm font-medium text-gray-700">Review</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Review</span>
               </div>
             </div>
 
             {/* Step 1: Basic Event Information */}
-            <div className="bg-gray-50 rounded-2xl p-6">
-              <h4 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-2xl p-6">
+              <h4 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
                 <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-semibold mr-3">1</div>
                 Basic Event Information
               </h4>
-              
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">
+                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                     Event Title *
                   </label>
                   <input
                     type="text"
                     value={newEvent.title}
                     onChange={(e) => handleNewEventChange('title', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all dark:placeholder-gray-400"
                     placeholder="Enter an engaging event title"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">
+                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                     Location *
                   </label>
                   <input
                     type="text"
                     value={newEvent.location}
                     onChange={(e) => handleNewEventChange('location', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all dark:placeholder-gray-400"
                     placeholder="City, address, or landmark (e.g., Mumbai, Delhi, etc.)"
                   />
-                  <p className="text-xs text-gray-500 mt-1">We'll automatically determine coordinates for matching</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">We'll automatically determine coordinates for matching</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">
+                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                     Event Date *
                   </label>
                   <input
                     type="date"
                     value={newEvent.date}
                     onChange={(e) => handleNewEventChange('date', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all [color-scheme:dark]"
                     min={new Date().toISOString().split('T')[0]}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">
+                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                     Duration
                   </label>
                   <input
                     type="text"
                     value={newEvent.duration}
                     onChange={(e) => handleNewEventChange('duration', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all dark:placeholder-gray-400"
                     placeholder="e.g., 4 hours, Half day, Full day"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">
+                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                     Capacity *
                   </label>
                   <input
@@ -206,19 +208,19 @@ const CreateEventModal = memo(({
                     value={newEvent.capacity}
                     onChange={(e) => handleNewEventChange('capacity', e.target.value)}
                     min="1"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all dark:placeholder-gray-400"
                     placeholder="Max participants"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">
+                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                     Category
                   </label>
                   <select
                     value={newEvent.category}
                     onChange={(e) => handleNewEventChange('category', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                   >
                     <option value="environmental">Environmental</option>
                     <option value="social">Social</option>
@@ -230,27 +232,27 @@ const CreateEventModal = memo(({
               </div>
 
               <div className="mt-6">
-                <label className="block text-sm font-semibold text-gray-800 mb-2">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Description *
                 </label>
                 <textarea
                   value={newEvent.description}
                   onChange={(e) => handleNewEventChange('description', e.target.value)}
                   rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none dark:placeholder-gray-400"
                   placeholder="Describe your event, its goals, and what volunteers will do..."
                 />
               </div>
 
               <div className="mt-6">
-                <label className="block text-sm font-semibold text-gray-800 mb-2">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Application Deadline
                 </label>
                 <input
                   type="date"
                   value={newEvent.applicationDeadline}
                   onChange={(e) => handleNewEventChange('applicationDeadline', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all [color-scheme:dark]"
                   min={new Date().toISOString().split('T')[0]}
                   max={newEvent.date ? new Date(new Date(newEvent.date).getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined}
                 />
@@ -261,21 +263,21 @@ const CreateEventModal = memo(({
             </div>
 
             {/* Step 2: Matching Preferences */}
-            <div className="bg-green-50 rounded-2xl p-6">
-              <h4 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+            <div className="bg-green-50 dark:bg-green-900/30 rounded-2xl p-6">
+              <h4 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
                 <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-semibold mr-3">2</div>
                 Smart Matching Preferences
               </h4>
-              <p className="text-gray-600 mb-6">These details help us match your event with the most suitable volunteers</p>
-              
+              <p className="text-gray-600 dark:text-gray-300 mb-6">These details help us match your event with the most suitable volunteers</p>
+
               <div className="space-y-6">
                 {/* Waste Types */}
                 <div>
-                  <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
+                  <label className="flex items-center text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
                     <span>Waste Types Involved *</span>
-                    <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Required for matching</span>
+                    <span className="ml-2 px-2 py-1 bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-200 text-xs rounded-full">Required for matching</span>
                   </label>
-                  <div className="bg-white rounded-xl p-4 border border-gray-200">
+                  <div className="bg-white dark:bg-gray-700 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                       {[
                         { value: 'organic', label: 'Organic', emoji: '🥬' },
@@ -293,8 +295,8 @@ const CreateEventModal = memo(({
                           key={wasteType.value}
                           className={`flex items-center space-x-2 cursor-pointer p-3 rounded-lg border-2 transition-all ${
                             newEvent.wasteTypes?.includes(wasteType.value)
-                              ? 'border-green-500 bg-green-50 text-green-700'
-                              : 'border-gray-200 hover:border-green-300 hover:bg-green-50'
+                              ? 'border-green-500 bg-green-50 dark:bg-green-900/50 text-green-700 dark:text-green-200'
+                              : 'border-gray-200 dark:border-gray-600 hover:border-green-300 hover:bg-green-50 dark:hover:bg-green-900/20'
                           }`}
                         >
                           <input
@@ -314,13 +316,13 @@ const CreateEventModal = memo(({
                 {/* Experience Level and Time */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                    <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                       Required Experience Level
                     </label>
                     <select
                       value={newEvent.requiredExperienceLevel}
                       onChange={(e) => handleNewEventChange('requiredExperienceLevel', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     >
                       <option value="beginner">🌱 Beginner - No prior experience needed</option>
                       <option value="intermediate">🌿 Intermediate - Some experience preferred</option>
@@ -328,13 +330,13 @@ const CreateEventModal = memo(({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                    <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                       Preferred Time of Day
                     </label>
                     <select
                       value={newEvent.timeOfDay}
                       onChange={(e) => handleNewEventChange('timeOfDay', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     >
                       <option value="morning">🌅 Morning (6 AM - 12 PM)</option>
                       <option value="afternoon">☀️ Afternoon (12 PM - 6 PM)</option>
@@ -346,23 +348,23 @@ const CreateEventModal = memo(({
 
                 {/* Skills */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-3">
+                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
                     Required Skills (Optional)
                   </label>
-                  <div className="bg-white rounded-xl p-4 border border-gray-200">
+                  <div className="bg-white dark:bg-gray-700 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
                     <div className="grid grid-cols-2 gap-2">
                       {availableSkills.map((skill) => (
                         <label
                           key={skill}
-                          className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                          className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                         >
                           <input
                             type="checkbox"
                             checked={newEvent.requiredSkills?.includes(skill) || false}
                             onChange={() => handleSkillToggle(skill)}
-                            className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                            className="w-4 h-4 text-green-600 bg-gray-100 dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-green-500"
                           />
-                          <span className="text-sm text-gray-700">{skill}</span>
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{skill}</span>
                         </label>
                       ))}
                     </div>
@@ -372,20 +374,20 @@ const CreateEventModal = memo(({
             </div>
 
             {/* Step 3: Event Image */}
-            <div className="bg-blue-50 rounded-2xl p-6">
-              <h4 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+            <div className="bg-blue-50 dark:bg-blue-900/30 rounded-2xl p-6">
+              <h4 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
                 <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-semibold mr-3">3</div>
                 Event Banner Image
               </h4>
-              
+
               {!newEvent.imagePreview ? (
-                <div className="border-2 border-dashed border-blue-300 rounded-2xl p-8 text-center hover:border-blue-400 transition-colors bg-white">
+                <div className="border-2 border-dashed border-blue-300 dark:border-blue-600 rounded-2xl p-8 text-center hover:border-blue-400 transition-colors bg-white dark:bg-gray-700">
                   <div className="flex flex-col items-center">
-                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                      <Upload className="w-8 h-8 text-blue-600" />
+                    <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mb-4">
+                      <Upload className="w-8 h-8 text-blue-600 dark:text-blue-300" />
                     </div>
-                    <h4 className="text-lg font-semibold text-gray-700 mb-2">Upload Event Image</h4>
-                    <p className="text-gray-500 mb-4">Add an engaging image to attract more volunteers</p>
+                    <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">Upload Event Image</h4>
+                    <p className="text-gray-500 dark:text-gray-400 mb-4">Add an engaging image to attract more volunteers</p>
                     <input
                       type="file"
                       accept="image/*"
@@ -403,7 +405,7 @@ const CreateEventModal = memo(({
                   </div>
                 </div>
               ) : (
-                <div className="relative rounded-2xl overflow-hidden bg-white border border-blue-200">
+                <div className="relative rounded-2xl overflow-hidden bg-white dark:bg-gray-700 border border-blue-200 dark:border-blue-700">
                   <img
                     src={newEvent.imagePreview}
                     alt="Event preview"
@@ -422,19 +424,19 @@ const CreateEventModal = memo(({
             </div>
 
             {/* Tips Section */}
-            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-6">
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-gray-700 dark:to-gray-800 rounded-2xl p-6">
               <div className="flex items-start space-x-3">
-                <AlertCircle className="w-6 h-6 text-green-600 mt-0.5" />
+                <AlertCircle className="w-6 h-6 text-green-600 dark:text-green-400 mt-0.5" />
                 <div>
-                  <h4 className="font-bold text-gray-900 mb-2">💡 Tips for a Successful Event</h4>
+                  <h4 className="font-bold text-gray-900 dark:text-gray-100 mb-2">💡 Tips for a Successful Event</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <ul className="text-sm text-gray-700 space-y-1">
+                    <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
                       <li>• Use clear, action-oriented titles</li>
                       <li>• Include specific location details</li>
                       <li>• Add an engaging banner image</li>
                       <li>• Specify required skills honestly</li>
                     </ul>
-                    <ul className="text-sm text-gray-700 space-y-1">
+                    <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
                       <li>• Select relevant waste types for better matching</li>
                       <li>• Set realistic capacity and duration</li>
                       <li>• Provide clear event descriptions</li>
@@ -447,15 +449,15 @@ const CreateEventModal = memo(({
           </div>
 
           {/* Footer */}
-          <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+          <div className="bg-gray-50 dark:bg-gray-900/50 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
             <div className="flex justify-between items-center">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
                 📍 Events with waste types get better volunteer matches
               </div>
               <div className="flex space-x-3">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="px-6 py-3 text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                  className="px-6 py-3 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors font-medium"
                 >
                   Cancel
                 </button>
@@ -488,74 +490,74 @@ const CreateEventModal = memo(({
 CreateEventModal.displayName = 'CreateEventModal';
 
 // Extracted EditEventModal component
-const EditEventModal = memo(({ 
-  showModal, 
-  setShowModal, 
-  editEvent, 
-  handleEditEventChange, 
-  handleUpdateEvent, 
-  loading 
+const EditEventModal = memo(({
+  showModal,
+  setShowModal,
+  editEvent,
+  handleEditEventChange,
+  handleUpdateEvent,
+  loading
 }) => {
   if (!showModal) return null;
-  
+
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-semibold text-gray-800">Edit Event</h3>
+            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Edit Event</h3>
             <button
               onClick={() => setShowModal(false)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
-              <X className="w-5 h-5 text-gray-500" />
+              <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Event Title *
               </label>
               <input
                 type="text"
                 value={editEvent.title}
                 onChange={(e) => handleEditEventChange('title', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:placeholder-gray-400"
                 placeholder="Enter event title"
                 autoComplete="off"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Location *
               </label>
               <input
                 type="text"
                 value={editEvent.location}
                 onChange={(e) => handleEditEventChange('location', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:placeholder-gray-400"
                 placeholder="Event location"
                 autoComplete="off"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Date *
               </label>
               <input
                 type="date"
                 value={editEvent.date}
                 onChange={(e) => handleEditEventChange('date', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent [color-scheme:dark]"
                 min={new Date().toISOString().split('T')[0]}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Capacity *
               </label>
               <input
@@ -563,19 +565,19 @@ const EditEventModal = memo(({
                 value={editEvent.capacity}
                 onChange={(e) => handleEditEventChange('capacity', e.target.value)}
                 min="1"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:placeholder-gray-400"
                 placeholder="Maximum participants"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Category
               </label>
               <select
                 value={editEvent.category}
                 onChange={(e) => handleEditEventChange('category', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="environmental">Environmental</option>
                 <option value="social">Social</option>
@@ -586,27 +588,27 @@ const EditEventModal = memo(({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Duration
               </label>
               <input
                 type="text"
                 value={editEvent.duration}
                 onChange={(e) => handleEditEventChange('duration', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:placeholder-gray-400"
                 placeholder="e.g., 4 hours"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Application Deadline
               </label>
               <input
                 type="date"
                 value={editEvent.applicationDeadline}
                 onChange={(e) => handleEditEventChange('applicationDeadline', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent [color-scheme:dark]"
                 min={new Date().toISOString().split('T')[0]}
                 max={editEvent.date ? new Date(new Date(editEvent.date).getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined}
               />
@@ -617,28 +619,28 @@ const EditEventModal = memo(({
           </div>
 
           <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Description *
             </label>
             <textarea
               value={editEvent.description}
               onChange={(e) => handleEditEventChange('description', e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:placeholder-gray-400"
               placeholder="Describe the event"
             />
           </div>
 
           <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
               Required Skills
             </label>
-            <div className="bg-gray-50 rounded-lg p-3 max-h-32 overflow-y-auto">
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 max-h-32 overflow-y-auto">
               <div className="grid grid-cols-2 gap-2">
                 {['Environmental Conservation', 'Community Organizing', 'Event Management', 'Public Speaking', 'Social Media', 'Photography', 'First Aid', 'Teaching', 'Fundraising', 'Technical Skills'].map((skill) => (
                   <label
                     key={skill}
-                    className="flex items-center space-x-2 cursor-pointer p-1 rounded hover:bg-white transition-colors"
+                    className="flex items-center space-x-2 cursor-pointer p-1 rounded hover:bg-white dark:hover:bg-gray-600 transition-colors"
                   >
                     <input
                       type="checkbox"
@@ -651,19 +653,19 @@ const EditEventModal = memo(({
                           handleEditEventChange('requiredSkills', [...skills, skill]);
                         }
                       }}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500"
                     />
-                    <span className="text-sm text-gray-700">{skill}</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{skill}</span>
                   </label>
                 ))}
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
+          <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
             <button
               onClick={() => setShowModal(false)}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className="px-4 py-2 text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
             >
               Cancel
             </button>
@@ -684,37 +686,37 @@ const EditEventModal = memo(({
 EditEventModal.displayName = 'EditEventModal';
 
 // Delete Confirmation Modal component
-const DeleteConfirmationModal = memo(({ 
-  showModal, 
-  setShowModal, 
-  eventToDelete, 
-  onConfirm, 
-  loading 
+const DeleteConfirmationModal = memo(({
+  showModal,
+  setShowModal,
+  eventToDelete,
+  onConfirm,
+  loading
 }) => {
   if (!showModal || !eventToDelete) return null;
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full shadow-2xl">
         <div className="p-6">
-          <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
-            <AlertCircle className="w-6 h-6 text-red-600" />
+          <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 dark:bg-red-900/50 rounded-full">
+            <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
           </div>
-          
-          <h3 className="text-xl font-semibold text-gray-900 text-center mb-2">
+
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 text-center mb-2">
             Delete Event
           </h3>
-          
-          <p className="text-gray-600 text-center mb-4">
-            Are you sure you want to delete <span className="font-semibold">"{eventToDelete.title}"</span>? 
+
+          <p className="text-gray-600 dark:text-gray-400 text-center mb-4">
+            Are you sure you want to delete <span className="font-semibold text-gray-800 dark:text-gray-200">"{eventToDelete.title}"</span>?
             This action cannot be undone and will remove all associated data.
           </p>
-          
+
           <div className="flex gap-3 mt-6">
             <button
               onClick={() => setShowModal(false)}
               disabled={loading}
-              className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+              className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
@@ -742,40 +744,40 @@ const DeleteConfirmationModal = memo(({
 DeleteConfirmationModal.displayName = 'DeleteConfirmationModal';
 
 // View Event Details Modal component
-const ViewEventDetailsModal = memo(({ 
-  showModal, 
-  setShowModal, 
+const ViewEventDetailsModal = memo(({
+  showModal,
+  setShowModal,
   event
 }) => {
   if (!showModal || !event) return null;
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-100 p-6 rounded-t-2xl">
+        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 p-6 rounded-t-2xl z-10">
           <div className="flex justify-between items-start">
             <div className="flex-1">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">{event.title}</h3>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">{event.title}</h3>
               <div className="flex items-center gap-3">
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  event.status === 'active' ? 'bg-green-100 text-green-800' :
-                  event.status === 'inactive' ? 'bg-red-100 text-red-800' :
-                  event.status === 'full' ? 'bg-orange-100 text-orange-800' :
-                  'bg-gray-100 text-gray-800'
+                  event.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' :
+                  event.status === 'inactive' ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300' :
+                  event.status === 'full' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300' :
+                  'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                 }`}>
                   {event.status}
                 </span>
-                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                <span className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 rounded-full text-sm font-medium">
                   {event.category}
                 </span>
               </div>
             </div>
             <button
               onClick={() => setShowModal(false)}
-              className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
             >
-              <X className="w-6 h-6 text-gray-500" />
+              <X className="w-6 h-6 text-gray-500 dark:text-gray-400" />
             </button>
           </div>
         </div>
@@ -785,8 +787,8 @@ const ViewEventDetailsModal = memo(({
           {/* Event Image */}
           {event.imageUrl && (
             <div className="mb-6 rounded-xl overflow-hidden">
-              <img 
-                src={event.imageUrl} 
+              <img
+                src={event.imageUrl}
                 alt={event.title}
                 className="w-full h-64 object-cover"
                 onError={(e) => {
@@ -799,41 +801,41 @@ const ViewEventDetailsModal = memo(({
           {/* Event Details Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div className="space-y-4">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
-                  <MapPin className="w-4 h-4 mr-2 text-gray-600" />
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center">
+                  <MapPin className="w-4 h-4 mr-2 text-gray-600 dark:text-gray-400" />
                   Location
                 </h4>
-                <p className="text-gray-700">{event.location}</p>
+                <p className="text-gray-700 dark:text-gray-300">{event.location}</p>
               </div>
-              
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
-                  <Calendar className="w-4 h-4 mr-2 text-gray-600" />
+
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center">
+                  <Calendar className="w-4 h-4 mr-2 text-gray-600 dark:text-gray-400" />
                   Event Date
                 </h4>
-                <p className="text-gray-700">{new Date(event.date).toLocaleDateString()}</p>
+                <p className="text-gray-700 dark:text-gray-300">{new Date(event.date).toLocaleDateString()}</p>
               </div>
 
               {event.duration && (
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
-                    <Clock className="w-4 h-4 mr-2 text-gray-600" />
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center">
+                    <Clock className="w-4 h-4 mr-2 text-gray-600 dark:text-gray-400" />
                     Duration
                   </h4>
-                  <p className="text-gray-700">{event.duration}</p>
+                  <p className="text-gray-700 dark:text-gray-300">{event.duration}</p>
                 </div>
               )}
             </div>
 
             <div className="space-y-4">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
-                  <Users className="w-4 h-4 mr-2 text-gray-600" />
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center">
+                  <Users className="w-4 h-4 mr-2 text-gray-600 dark:text-gray-400" />
                   Capacity
                 </h4>
-                <p className="text-gray-700">{event.registered || 0}/{event.capacity} registered</p>
-                <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                <p className="text-gray-700 dark:text-gray-300">{event.registered || 0}/{event.capacity} registered</p>
+                <div className="mt-2 w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
                   <div
                     className="bg-blue-600 h-2 rounded-full"
                     style={{ width: `${((event.registered || 0) / event.capacity) * 100}%` }}
@@ -841,24 +843,24 @@ const ViewEventDetailsModal = memo(({
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
-                  <UserCheck className="w-4 h-4 mr-2 text-gray-600" />
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center">
+                  <UserCheck className="w-4 h-4 mr-2 text-gray-600 dark:text-gray-400" />
                   Applications
                 </h4>
-                <p className="text-gray-700">
+                <p className="text-gray-700 dark:text-gray-300">
                   {/* Add applications count logic here based on your applications data */}
                   Pending applications available
                 </p>
               </div>
 
               {event.applicationDeadline && (
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
-                    <Calendar className="w-4 h-4 mr-2 text-gray-600" />
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center">
+                    <Calendar className="w-4 h-4 mr-2 text-gray-600 dark:text-gray-400" />
                     Application Deadline
                   </h4>
-                  <p className="text-gray-700">{new Date(event.applicationDeadline).toLocaleDateString()}</p>
+                  <p className="text-gray-700 dark:text-gray-300">{new Date(event.applicationDeadline).toLocaleDateString()}</p>
                 </div>
               )}
             </div>
@@ -866,19 +868,19 @@ const ViewEventDetailsModal = memo(({
 
           {/* Description */}
           <div className="mb-6">
-            <h4 className="text-lg font-semibold text-gray-800 mb-3">Description</h4>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-gray-700 leading-relaxed">{event.description}</p>
+            <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Description</h4>
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{event.description}</p>
             </div>
           </div>
 
           {/* Required Skills */}
           {event.requiredSkills && event.requiredSkills.length > 0 && (
             <div className="mb-6">
-              <h4 className="text-lg font-semibold text-gray-800 mb-3">Required Skills</h4>
+              <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Required Skills</h4>
               <div className="flex flex-wrap gap-2">
                 {event.requiredSkills.map((skill, index) => (
-                  <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                  <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 text-sm rounded-full">
                     {skill}
                   </span>
                 ))}
@@ -887,7 +889,7 @@ const ViewEventDetailsModal = memo(({
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-4 border-t border-gray-200">
+          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               onClick={() => setShowModal(false)}
               className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
@@ -914,58 +916,58 @@ const ViewEventDetailsModal = memo(({
 ViewEventDetailsModal.displayName = 'ViewEventDetailsModal';
 
 // Application Management Modal component
-const ApplicationManagementModal = memo(({ 
-  showModal, 
-  setShowModal, 
-  selectedEvent, 
-  applications, 
+const ApplicationManagementModal = memo(({
+  showModal,
+  setShowModal,
+  selectedEvent,
+  applications,
   onApproveApplication,
   onRejectApplication,
-  loading 
+  loading
 }) => {
   if (!showModal || !selectedEvent) return null;
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h3 className="text-xl font-semibold text-gray-800">Manage Applications</h3>
-              <p className="text-gray-600 text-sm mt-1">{selectedEvent.title}</p>
+              <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Manage Applications</h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">{selectedEvent.title}</p>
             </div>
             <button
               onClick={() => setShowModal(false)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
-              <X className="w-5 h-5 text-gray-500" />
+              <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
             </button>
           </div>
 
           {applications.length === 0 ? (
             <div className="text-center py-8">
-              <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h4 className="text-lg font-medium text-gray-600 mb-2">No Applications Yet</h4>
-              <p className="text-gray-500">Applications for this event will appear here.</p>
+              <Users className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+              <h4 className="text-lg font-medium text-gray-600 dark:text-gray-300 mb-2">No Applications Yet</h4>
+              <p className="text-gray-500 dark:text-gray-400">Applications for this event will appear here.</p>
             </div>
           ) : (
             <div className="space-y-4">
               {applications.map((application) => (
-                <div key={application.id} className="bg-gray-50 rounded-lg p-4">
+                <div key={application.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h4 className="text-lg font-semibold text-gray-800">{application.volunteerName}</h4>
+                        <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">{application.volunteerName}</h4>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          application.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          application.status === 'accepted' ? 'bg-green-100 text-green-800' :
-                          'bg-red-100 text-red-800'
+                          application.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300' :
+                          application.status === 'accepted' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' :
+                          'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
                         }`}>
                           {application.status}
                         </span>
                       </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mb-3">
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 dark:text-gray-400 mb-3">
                         <div className="flex items-center">
                           <Mail className="w-4 h-4 mr-2" />
                           {application.email}
@@ -983,28 +985,28 @@ const ApplicationManagementModal = memo(({
                           {application.experience} experience
                         </div>
                       </div>
-                      
+
                       {application.skills && application.skills.length > 0 && (
                         <div className="mb-3">
-                          <p className="text-sm text-gray-600 mb-1">Skills:</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Skills:</p>
                           <div className="flex flex-wrap gap-2">
                             {application.skills.map((skill, index) => (
-                              <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                              <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 text-xs rounded-full">
                                 {skill}
                               </span>
                             ))}
                           </div>
                         </div>
                       )}
-                      
+
                       {application.message && (
                         <div className="mb-3">
-                          <p className="text-sm text-gray-600 mb-1">Message:</p>
-                          <p className="text-sm text-gray-800 bg-white p-3 rounded border">{application.message}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Message:</p>
+                          <p className="text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-600 p-3 rounded border dark:border-gray-500">{application.message}</p>
                         </div>
                       )}
                     </div>
-                    
+
                     {application.status === 'pending' && (
                       <div className="flex gap-2 ml-4">
                         <button
@@ -1031,10 +1033,10 @@ const ApplicationManagementModal = memo(({
             </div>
           )}
 
-          <div className="flex justify-end mt-6 pt-6 border-t border-gray-200">
+          <div className="flex justify-end mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
             <button
               onClick={() => setShowModal(false)}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className="px-4 py-2 text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
             >
               Close
             </button>
@@ -1057,6 +1059,23 @@ const NGODashboard = () => {
   const [selectedEventForAttendance, setSelectedEventForAttendance] = useState(null)
   const [recentActivities, setRecentActivities] = useState([])
   const [activitiesLoading, setActivitiesLoading] = useState(false)
+  // const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+
+  // // Theme Toggler
+  // const toggleTheme = () => {
+  //   const newTheme = theme === 'light' ? 'dark' : 'light';
+  //   setTheme(newTheme);
+  //   localStorage.setItem('theme', newTheme);
+  // };
+
+  // useEffect(() => {
+  //   if (theme === 'dark') {
+  //     document.documentElement.classList.add('dark');
+  //   } else {
+  //     document.documentElement.classList.remove('dark');
+  //   }
+  // }, [theme]);
+
 
   // Check if mobile screen size
   useEffect(() => {
@@ -1064,7 +1083,7 @@ const NGODashboard = () => {
       const mobile = window.innerWidth < 1024 // lg breakpoint
       setIsMobile(mobile)
     }
-    
+
     checkMobile()
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
@@ -1159,7 +1178,7 @@ const NGODashboard = () => {
   // Application Management State
   const [showApplicationModal, setShowApplicationModal] = useState(false)
   const [selectedEventForApplications, setSelectedEventForApplications] = useState(null)
-  
+
   // Mock applications data for fallback
   const mockApplications = [
     {
@@ -1199,7 +1218,7 @@ const NGODashboard = () => {
       message: 'As an educator, I believe this workshop aligns perfectly with my passion for environmental education.'
     }
   ];
-  
+
   const [applications, setApplications] = useState(mockApplications);
 
   // Handle input changes for new event
@@ -1290,7 +1309,7 @@ const NGODashboard = () => {
   // Helper function to get icon component for activity type
   const getActivityIcon = (iconType) => {
     const iconProps = { className: "w-5 h-5 mr-3" };
-    
+
     switch (iconType) {
       case 'user-check':
         return <UserCheck {...iconProps} className="w-5 h-5 mr-3 text-green-500" />;
@@ -1355,7 +1374,7 @@ const NGODashboard = () => {
     try {
       setLoading(true);
       console.log('Loading dashboard data...');
-      
+
       const [statsResponse, eventsResponse, activitiesResponse] = await Promise.all([
         ngoAPI.getDashboardStats(),
         ngoAPI.getMyEvents(),
@@ -1426,9 +1445,9 @@ const NGODashboard = () => {
   // Create new event
   const handleCreateEvent = async () => {
     console.log('Create event called with:', newEvent); // Debug log
-    
-    if (!newEvent.title || !newEvent.description || !newEvent.location || 
-        !newEvent.date || !newEvent.capacity) {
+
+    if (!newEvent.title || !newEvent.description || !newEvent.location ||
+      !newEvent.date || !newEvent.capacity) {
       console.log('Validation failed:', {
         title: newEvent.title,
         description: newEvent.description,
@@ -1462,17 +1481,17 @@ const NGODashboard = () => {
         // Send only the base64 image string, not the File object
         image: newEvent.imagePreview || null
       };
-      
+
       // Remove the File object and imagePreview from the data being sent
       delete eventData.imagePreview;
-      
+
       console.log('Sending event data:', {
         ...eventData,
         image: eventData.image ? `[Base64 string: ${eventData.image.substring(0, 50)}...]` : null
       }); // Debug log (truncated image for readability)
       const response = await ngoAPI.createEvent(eventData);
       console.log('Event creation response:', response); // Debug log
-      
+
       setNewEvent({
         title: '',
         description: '',
@@ -1525,8 +1544,8 @@ const NGODashboard = () => {
 
   // Handle update event
   const handleUpdateEvent = async () => {
-    if (!editEvent.title || !editEvent.description || !editEvent.location || 
-        !editEvent.date || !editEvent.capacity) {
+    if (!editEvent.title || !editEvent.description || !editEvent.location ||
+      !editEvent.date || !editEvent.capacity) {
       toast.error('Please fill in all required fields')
       return
     }
@@ -1545,9 +1564,9 @@ const NGODashboard = () => {
         ...editEvent,
         capacity: parseInt(editEvent.capacity)
       };
-      
+
       await ngoAPI.updateEvent(editingEvent._id || editingEvent.id, eventData);
-      
+
       setShowEditEventModal(false);
       setEditingEvent(null);
       setEditEvent({
@@ -1563,7 +1582,7 @@ const NGODashboard = () => {
         requiredSkills: [],
         applicationDeadline: ''
       });
-      
+
       toast.success('Event updated successfully!');
       loadDashboardData(); // Refresh data
     } catch (error) {
@@ -1603,7 +1622,7 @@ const NGODashboard = () => {
   const handleViewApplications = async (event) => {
     setSelectedEventForApplications(event);
     setShowApplicationModal(true);
-    
+
     try {
       setLoading(true);
       console.log('Fetching applications for event:', event._id || event.id);
@@ -1629,17 +1648,17 @@ const NGODashboard = () => {
   // Handle approve application
   const handleApproveApplication = async (applicationId) => {
     if (!selectedEventForApplications) return;
-    
+
     try {
       setLoading(true);
       console.log('Approving application:', applicationId, 'for event:', selectedEventForApplications._id || selectedEventForApplications.id);
       await ngoAPI.reviewApplication(selectedEventForApplications._id || selectedEventForApplications.id, applicationId, { status: 'accepted' });
-      
+
       // Update local state
-      setApplications(prev => prev.map(app => 
+      setApplications(prev => prev.map(app =>
         app._id === applicationId || app.id === applicationId ? { ...app, status: 'approved' } : app
       ));
-      
+
       toast.success('Application approved successfully!');
       // Refresh data to sync with backend
       loadDashboardData();
@@ -1654,17 +1673,17 @@ const NGODashboard = () => {
   // Handle reject application
   const handleRejectApplication = async (applicationId) => {
     if (!selectedEventForApplications) return;
-    
+
     try {
       setLoading(true);
       console.log('Rejecting application:', applicationId, 'for event:', selectedEventForApplications._id || selectedEventForApplications.id);
       await ngoAPI.reviewApplication(selectedEventForApplications._id || selectedEventForApplications.id, applicationId, { status: 'rejected' });
-      
+
       // Update local state
-      setApplications(prev => prev.map(app => 
+      setApplications(prev => prev.map(app =>
         app._id === applicationId || app.id === applicationId ? { ...app, status: 'rejected' } : app
       ));
-      
+
       toast.success('Application rejected successfully!');
       // Refresh data to sync with backend
       loadDashboardData();
@@ -1701,8 +1720,8 @@ const NGODashboard = () => {
     try {
       setLoading(true)
       await ngoAPI.updateEvent(eventId, { status: newStatus })
-      
-      setEvents(events.map(event => 
+
+      setEvents(events.map(event =>
         event.id === eventId ? { ...event, status: newStatus } : event
       ))
       toast.success(`Event ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully!`)
@@ -1725,12 +1744,12 @@ const NGODashboard = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
-          <div key={index} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
-                <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
-                <p className="text-xs text-green-600 mt-1">{stat.change} this month</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{stat.title}</p>
+                <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">{stat.value}</p>
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1">{stat.change} this month</p>
               </div>
               <div className={`p-3 rounded-lg ${stat.color}`}>
                 <stat.icon className="w-6 h-6 text-white" />
@@ -1741,33 +1760,33 @@ const NGODashboard = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Quick Actions</h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <button
             onClick={() => setShowCreateEventModal(true)}
-            className="flex items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+            className="flex items-center p-4 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/50 dark:hover:bg-blue-900 rounded-lg transition-colors"
           >
-            <Plus className="w-5 h-5 text-blue-600 mr-3" />
-            <span className="text-blue-800 font-medium">Create New Event</span>
+            <Plus className="w-5 h-5 text-blue-600 dark:text-blue-300 mr-3" />
+            <span className="text-blue-800 dark:text-blue-200 font-medium">Create New Event</span>
           </button>
           <button
             onClick={() => setActiveTab('volunteers')}
-            className="flex items-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+            className="flex items-center p-4 bg-green-50 hover:bg-green-100 dark:bg-green-900/50 dark:hover:bg-green-900 rounded-lg transition-colors"
           >
-            <Users className="w-5 h-5 text-green-600 mr-3" />
-            <span className="text-green-800 font-medium">Manage Volunteers</span>
+            <Users className="w-5 h-5 text-green-600 dark:text-green-300 mr-3" />
+            <span className="text-green-800 dark:text-green-200 font-medium">Manage Volunteers</span>
           </button>
           <button
             onClick={() => setActiveTab('events')}
-            className="flex items-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
+            className="flex items-center p-4 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/50 dark:hover:bg-purple-900 rounded-lg transition-colors"
           >
-            <Calendar className="w-5 h-5 text-purple-600 mr-3" />
-            <span className="text-purple-800 font-medium">View All Events</span>
+            <Calendar className="w-5 h-5 text-purple-600 dark:text-purple-300 mr-3" />
+            <span className="text-purple-800 dark:text-purple-200 font-medium">View All Events</span>
           </button>
           <button
             onClick={() => {
-              const eventsWithApplications = events.filter(event => 
+              const eventsWithApplications = events.filter(event =>
                 applications.some(app => app.eventId === event.id && app.status === 'pending')
               );
               if (eventsWithApplications.length > 0) {
@@ -1776,22 +1795,22 @@ const NGODashboard = () => {
                 toast.info('No pending applications at the moment');
               }
             }}
-            className="flex items-center p-4 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors"
+            className="flex items-center p-4 bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-900/50 dark:hover:bg-yellow-900 rounded-lg transition-colors"
           >
-            <UserCheck className="w-5 h-5 text-yellow-600 mr-3" />
-            <span className="text-yellow-800 font-medium">Review Applications</span>
+            <UserCheck className="w-5 h-5 text-yellow-600 dark:text-yellow-300 mr-3" />
+            <span className="text-yellow-800 dark:text-yellow-200 font-medium">Review Applications</span>
           </button>
         </div>
       </div>
 
       {/* Recent Activity */}
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-800">Recent Activity</h3>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Recent Activity</h3>
           <button
             onClick={refreshRecentActivities}
             disabled={activitiesLoading}
-            className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
+            className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
             title="Refresh activities"
           >
             <RefreshCw className={`w-4 h-4 ${activitiesLoading ? 'animate-spin' : ''}`} />
@@ -1800,35 +1819,35 @@ const NGODashboard = () => {
         {activitiesLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
-            <span className="ml-2 text-gray-600">Loading activities...</span>
+            <span className="ml-2 text-gray-600 dark:text-gray-400">Loading activities...</span>
           </div>
         ) : recentActivities.length > 0 ? (
           <div className="space-y-3">
             {recentActivities.map((activity) => (
-              <div key={activity.id} className="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <div key={activity.id} className="flex items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                 {getActivityIcon(activity.icon)}
                 <div className="flex-1">
-                  <p className="text-sm text-gray-800">{activity.message}</p>
-                  <p className="text-xs text-gray-500">{formatTimeAgo(activity.timestamp)}</p>
+                  <p className="text-sm text-gray-800 dark:text-gray-200">{activity.message}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{formatTimeAgo(activity.timestamp)}</p>
                   {activity.details && (
                     <div className="text-xs text-gray-400 mt-1">
                       {activity.details.category && (
-                        <span className="inline-block bg-gray-200 text-gray-700 px-2 py-1 rounded-full mr-2">
+                        <span className="inline-block bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full mr-2">
                           {activity.details.category}
                         </span>
                       )}
                       {activity.details.location && (
-                        <span className="text-gray-500"> {activity.details.location}</span>
+                        <span className="text-gray-500 dark:text-gray-400"> {activity.details.location}</span>
                       )}
                     </div>
                   )}
                 </div>
                 {activity.status && (
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                    activity.status === 'accepted' ? 'bg-green-100 text-green-800' :
-                    activity.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    activity.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800'
+                    activity.status === 'accepted' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' :
+                    activity.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300' :
+                    activity.status === 'rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300' :
+                    'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                   }`}>
                     {activity.status}
                   </span>
@@ -1838,9 +1857,9 @@ const NGODashboard = () => {
           </div>
         ) : (
           <div className="text-center py-8">
-            <Activity className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-            <p className="text-gray-500 text-sm">No recent activities</p>
-            <p className="text-xs text-gray-400">Activities will appear here as they happen</p>
+            <Activity className="w-12 h-12 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No recent activities</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">Activities will appear here as they happen</p>
           </div>
         )}
       </div>
@@ -1850,11 +1869,11 @@ const NGODashboard = () => {
   const renderEventsTab = () => (
     <div className="space-y-8">
       {/* Header Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">My Events</h2>
-            <p className="text-gray-600">Manage and track your organization's events</p>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">My Events</h2>
+            <p className="text-gray-600 dark:text-gray-400">Manage and track your organization's events</p>
           </div>
           <button
             onClick={() => setShowCreateEventModal(true)}
@@ -1868,12 +1887,12 @@ const NGODashboard = () => {
 
       {/* Events Grid */}
       {events.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Calendar className="w-8 h-8 text-gray-400" />
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-12 text-center">
+          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Calendar className="w-8 h-8 text-gray-400 dark:text-gray-500" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Events Yet</h3>
-          <p className="text-gray-600 mb-6">Start by creating your first event to engage volunteers</p>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">No Events Yet</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">Start by creating your first event to engage volunteers</p>
           <button
             onClick={() => setShowCreateEventModal(true)}
             className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 transition-colors mx-auto"
@@ -1885,65 +1904,65 @@ const NGODashboard = () => {
       ) : (
         <div className="grid gap-6">
           {events.map((event) => (
-            <div 
-              key={event.id} 
-              className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 overflow-hidden"
+            <div
+              key={event.id}
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-200 overflow-hidden"
             >
               <div className="p-6">
                 {/* Event Header */}
                 <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-6">
                   <div className="flex-1">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
-                      <h3 className="text-2xl font-bold text-gray-900">{event.title}</h3>
+                      <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{event.title}</h3>
                       <div className="flex gap-2">
                         <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          event.status === 'active' ? 'bg-green-100 text-green-800' :
-                          event.status === 'inactive' ? 'bg-red-100 text-red-800' :
-                          event.status === 'full' ? 'bg-orange-100 text-orange-800' :
-                          'bg-gray-100 text-gray-800'
+                          event.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' :
+                          event.status === 'inactive' ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300' :
+                          event.status === 'full' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300' :
+                          'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                         }`}>
                           {event.status}
                         </span>
-                        <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                        <span className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 rounded-full text-sm font-medium">
                           {event.category}
                         </span>
                       </div>
                     </div>
-                    
-                    <p className="text-gray-600 mb-4 leading-relaxed">{event.description}</p>
-                    
+
+                    <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">{event.description}</p>
+
                     {/* Event Info Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                      <div className="bg-gray-50 rounded-lg p-3">
-                        <div className="flex items-center text-gray-600 mb-1">
+                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                        <div className="flex items-center text-gray-600 dark:text-gray-400 mb-1">
                           <MapPin className="w-4 h-4 mr-2" />
                           <span className="text-sm font-medium">Location</span>
                         </div>
-                        <p className="text-gray-900 font-medium text-sm">{event.location}</p>
+                        <p className="text-gray-900 dark:text-gray-200 font-medium text-sm">{event.location}</p>
                       </div>
-                      
-                      <div className="bg-gray-50 rounded-lg p-3">
-                        <div className="flex items-center text-gray-600 mb-1">
+
+                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                        <div className="flex items-center text-gray-600 dark:text-gray-400 mb-1">
                           <Calendar className="w-4 h-4 mr-2" />
                           <span className="text-sm font-medium">Date</span>
                         </div>
-                        <p className="text-gray-900 font-medium text-sm">{new Date(event.date).toLocaleDateString()}</p>
+                        <p className="text-gray-900 dark:text-gray-200 font-medium text-sm">{new Date(event.date).toLocaleDateString()}</p>
                       </div>
-                      
-                      <div className="bg-gray-50 rounded-lg p-3">
-                        <div className="flex items-center text-gray-600 mb-1">
+
+                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                        <div className="flex items-center text-gray-600 dark:text-gray-400 mb-1">
                           <Users className="w-4 h-4 mr-2" />
                           <span className="text-sm font-medium">Capacity</span>
                         </div>
-                        <p className="text-gray-900 font-medium text-sm">{event.registered}/{event.capacity} registered</p>
+                        <p className="text-gray-900 dark:text-gray-200 font-medium text-sm">{event.registered}/{event.capacity} registered</p>
                       </div>
-                      
-                      <div className="bg-gray-50 rounded-lg p-3">
-                        <div className="flex items-center text-gray-600 mb-1">
+
+                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                        <div className="flex items-center text-gray-600 dark:text-gray-400 mb-1">
                           <UserCheck className="w-4 h-4 mr-2" />
                           <span className="text-sm font-medium">Applications</span>
                         </div>
-                        <p className="text-gray-900 font-medium text-sm">
+                        <p className="text-gray-900 dark:text-gray-200 font-medium text-sm">
                           {applications.filter(app => app.eventId === event.id && app.status === 'pending').length} pending
                         </p>
                       </div>
@@ -1960,7 +1979,7 @@ const NGODashboard = () => {
                       <Eye className="w-4 h-4" />
                       <span className="hidden sm:inline">View Details</span>
                     </button>
-                    
+
                     <button
                       onClick={() => handleEditEvent(event)}
                       className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
@@ -1969,7 +1988,7 @@ const NGODashboard = () => {
                       <Edit className="w-4 h-4" />
                       <span className="hidden sm:inline">Edit</span>
                     </button>
-                    
+
                     <button
                       onClick={() => handleViewApplications(event)}
                       className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
@@ -1978,12 +1997,12 @@ const NGODashboard = () => {
                       <UserCheck className="w-4 h-4" />
                       <span className="hidden sm:inline">Applications</span>
                     </button>
-                    
+
                     <button
                       onClick={() => updateEventStatus(event.id, event.status === 'active' ? 'inactive' : 'active')}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
-                        event.status === 'active' 
-                          ? 'bg-orange-600 text-white hover:bg-orange-700' 
+                        event.status === 'active'
+                          ? 'bg-orange-600 text-white hover:bg-orange-700'
                           : 'bg-green-600 text-white hover:bg-green-700'
                       }`}
                       title={event.status === 'active' ? 'Deactivate Event' : 'Activate Event'}
@@ -1993,7 +2012,7 @@ const NGODashboard = () => {
                         {event.status === 'active' ? 'Deactivate' : 'Activate'}
                       </span>
                     </button>
-                    
+
                     <button
                       onClick={() => handleDeleteEvent(event)}
                       className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
@@ -2004,16 +2023,16 @@ const NGODashboard = () => {
                     </button>
                   </div>
                 </div>
-                
+
                 {/* Progress Bar */}
                 <div className="mb-4">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">Registration Progress</span>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Registration Progress</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
                       {Math.round((event.registered / event.capacity) * 100)}%
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3">
                     <div
                       className={`h-3 rounded-full transition-all duration-300 ${
                         (event.registered / event.capacity) * 100 >= 100 ? 'bg-red-500' :
@@ -2035,13 +2054,13 @@ const NGODashboard = () => {
   const renderVolunteersTab = () => (
     <div className="space-y-8">
       {/* Header Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Registered Volunteers</h2>
-            <p className="text-gray-600">Manage volunteers registered for your events</p>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Registered Volunteers</h2>
+            <p className="text-gray-600 dark:text-gray-400">Manage volunteers registered for your events</p>
           </div>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
             Total: {volunteers.length} volunteers
           </div>
         </div>
@@ -2049,93 +2068,93 @@ const NGODashboard = () => {
 
       {/* Volunteers Grid */}
       {volunteers.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Users className="w-8 h-8 text-gray-400" />
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-12 text-center">
+          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Users className="w-8 h-8 text-gray-400 dark:text-gray-500" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Volunteers Yet</h3>
-          <p className="text-gray-600">Volunteers will appear here when they register for your events</p>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">No Volunteers Yet</h3>
+          <p className="text-gray-600 dark:text-gray-400">Volunteers will appear here when they register for your events</p>
         </div>
       ) : (
         <div className="grid gap-6">
           {volunteers.map((volunteer) => (
-            <div 
-              key={volunteer.id} 
-              className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 p-6"
+            <div
+              key={volunteer.id}
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-200 p-6"
             >
               <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
                 <div className="flex-1">
                   {/* Volunteer Header */}
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-                    <h3 className="text-xl font-bold text-gray-900">{volunteer.name}</h3>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{volunteer.name}</h3>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium w-fit ${
-                      volunteer.status === 'active' ? 'bg-green-100 text-green-800' : 
-                      'bg-gray-100 text-gray-800'
+                      volunteer.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' :
+                      'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                     }`}>
                       {volunteer.status}
                     </span>
                   </div>
-                  
+
                   {/* Contact Info Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <div className="flex items-center text-gray-600 mb-1">
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                      <div className="flex items-center text-gray-600 dark:text-gray-400 mb-1">
                         <Mail className="w-4 h-4 mr-2" />
                         <span className="text-sm font-medium">Email</span>
                       </div>
-                      <p className="text-gray-900 font-medium text-sm break-all">{volunteer.email}</p>
+                      <p className="text-gray-900 dark:text-gray-200 font-medium text-sm break-all">{volunteer.email}</p>
                     </div>
-                    
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <div className="flex items-center text-gray-600 mb-1">
+
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                      <div className="flex items-center text-gray-600 dark:text-gray-400 mb-1">
                         <Phone className="w-4 h-4 mr-2" />
                         <span className="text-sm font-medium">Phone</span>
                       </div>
-                      <p className="text-gray-900 font-medium text-sm">{volunteer.phone}</p>
+                      <p className="text-gray-900 dark:text-gray-200 font-medium text-sm">{volunteer.phone}</p>
                     </div>
-                    
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <div className="flex items-center text-gray-600 mb-1">
+
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                      <div className="flex items-center text-gray-600 dark:text-gray-400 mb-1">
                         <Clock className="w-4 h-4 mr-2" />
                         <span className="text-sm font-medium">Hours</span>
                       </div>
-                      <p className="text-gray-900 font-medium text-sm">{volunteer.totalHours} volunteer hours</p>
+                      <p className="text-gray-900 dark:text-gray-200 font-medium text-sm">{volunteer.totalHours} volunteer hours</p>
                     </div>
-                    
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <div className="flex items-center text-gray-600 mb-1">
+
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                      <div className="flex items-center text-gray-600 dark:text-gray-400 mb-1">
                         <Calendar className="w-4 h-4 mr-2" />
                         <span className="text-sm font-medium">Joined</span>
                       </div>
-                      <p className="text-gray-900 font-medium text-sm">{new Date(volunteer.joinDate).toLocaleDateString()}</p>
+                      <p className="text-gray-900 dark:text-gray-200 font-medium text-sm">{new Date(volunteer.joinDate).toLocaleDateString()}</p>
                     </div>
                   </div>
-                  
+
                   {/* Skills Section */}
                   <div className="mb-4">
-                    <h4 className="text-sm font-semibold text-gray-800 mb-2">Skills</h4>
+                    <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Skills</h4>
                     <div className="flex flex-wrap gap-2">
                       {volunteer.skills.map((skill, index) => (
-                        <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full font-medium">
+                        <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 text-sm rounded-full font-medium">
                           {skill}
                         </span>
                       ))}
                     </div>
                   </div>
-                  
+
                   {/* Registered Events Section */}
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-800 mb-2">Registered Events</h4>
+                    <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Registered Events</h4>
                     <div className="flex flex-wrap gap-2">
                       {volunteer.registeredEvents.map((event, index) => (
-                        <span key={index} className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full font-medium">
+                        <span key={index} className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 text-sm rounded-full font-medium">
                           {event}
                         </span>
                       ))}
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Action Buttons */}
                 <div className="flex gap-2 lg:flex-col lg:flex-shrink-0">
                   <button
@@ -2157,38 +2176,38 @@ const NGODashboard = () => {
   // Attendance Tab Render Function
   const renderAttendanceTab = () => (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <UserCheck className="w-7 h-7 text-green-600" />
               Event Attendance Management
             </h2>
-            <p className="text-gray-600 mt-1">Manage volunteer attendance for your events</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Manage volunteer attendance for your events</p>
           </div>
         </div>
 
         {/* Event Selection Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {events.filter(event => event.status === 'active').map(event => (
-            <div key={event.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-green-300 transition-colors">
+            <div key={event.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-500 transition-colors">
               <div className="flex items-start justify-between mb-3">
-                <h3 className="font-semibold text-gray-900 text-lg">{event.title}</h3>
-                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-lg">{event.title}</h3>
+                <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 text-xs font-medium rounded-full">
                   Active
                 </span>
               </div>
-              
+
               <div className="space-y-2 mb-4">
-                <div className="flex items-center text-sm text-gray-600">
+                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                   <Calendar className="w-4 h-4 mr-2" />
                   {new Date(event.date).toLocaleDateString()}
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
+                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                   <MapPin className="w-4 h-4 mr-2" />
                   {event.location}
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
+                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                   <Users className="w-4 h-4 mr-2" />
                   {event.registered} registered volunteers
                 </div>
@@ -2210,9 +2229,9 @@ const NGODashboard = () => {
 
         {events.filter(event => event.status === 'active').length === 0 && (
           <div className="text-center py-12">
-            <UserCheck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Events</h3>
-            <p className="text-gray-500">Create an event to start managing volunteer attendance</p>
+            <UserCheck className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Active Events</h3>
+            <p className="text-gray-500 dark:text-gray-400">Create an event to start managing volunteer attendance</p>
             <button
               onClick={() => setShowCreateEventModal(true)}
               className="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium"
@@ -2226,15 +2245,15 @@ const NGODashboard = () => {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navbar />
-      
+
       <div className="flex">
         <Side />
-        
+
         <div className="flex-1">
           {/* Clean Header */}
-          <div className="bg-white border-b border-gray-200">
+          <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div className="flex items-center space-x-4">
@@ -2242,17 +2261,23 @@ const NGODashboard = () => {
                     <BarChart3 className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h1 className="text-3xl font-bold text-gray-900">
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                       NGO Dashboard
                     </h1>
-                    <p className="text-gray-600 mt-1">Event & Volunteer Management</p>
+                    <p className="text-gray-600 dark:text-gray-400 mt-1">Event & Volunteer Management</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
+                  {/* <button
+                    onClick={toggleTheme}
+                    className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center space-x-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm"
+                  >
+                    {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                  </button> */}
                   <button
                     onClick={() => window.location.reload()}
                     disabled={loading}
-                    className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors flex items-center space-x-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm"
+                    className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center space-x-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm"
                   >
                     <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                     <span className="hidden sm:inline">Refresh</span>
@@ -2271,9 +2296,9 @@ const NGODashboard = () => {
           </div>
 
           {/* Clean Navigation Tabs */}
-          <div className="bg-white border-b border-gray-200 sticky top-16 z-40 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-16 z-40 shadow-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <nav className="flex space-x-1 py-4">
+              <nav className="flex space-x-1 py-4 overflow-x-auto">
                 {[
                   { id: 'dashboard', label: 'Overview', icon: BarChart3, hideOnMobile: false },
                   { id: 'events', label: 'My Events', icon: Calendar, hideOnMobile: false },
@@ -2286,8 +2311,8 @@ const NGODashboard = () => {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center space-x-2 px-6 py-3 text-sm font-medium rounded-xl transition-all duration-200 flex-shrink-0 focus:outline-none ${
                       activeTab === tab.id
-                        ? 'text-green-700 bg-green-50 border border-green-200 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        ? 'text-green-700 bg-green-50 dark:text-green-200 dark:bg-green-900/50 border border-green-200 dark:border-green-700 shadow-sm'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700'
                     }`}
                   >
                     <tab.icon className="w-4 h-4" />
@@ -2309,7 +2334,7 @@ const NGODashboard = () => {
       </div>
 
       {/* Modals */}
-      <CreateEventModal 
+      <CreateEventModal
         showModal={showCreateEventModal}
         setShowModal={setShowCreateEventModal}
         newEvent={newEvent}
@@ -2317,14 +2342,14 @@ const NGODashboard = () => {
         handleCreateEvent={handleCreateEvent}
         loading={loading}
       />
-      
+
       {/* View Event Details Modal */}
       <ViewEventDetailsModal
         showModal={showViewDetailsModal}
         setShowModal={setShowViewDetailsModal}
         event={selectedEventForDetails}
       />
-      
+
       {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal
         showModal={showDeleteModal}
@@ -2344,8 +2369,8 @@ const NGODashboard = () => {
         onRejectApplication={handleRejectApplication}
         loading={loading}
       />
-      
-      <EditEventModal 
+
+      <EditEventModal
         showModal={showEditEventModal}
         setShowModal={setShowEditEventModal}
         editEvent={editEvent}
@@ -2357,7 +2382,7 @@ const NGODashboard = () => {
       {/* Attendance Management Modal */}
       {showAttendanceModal && selectedEventForAttendance && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
             <AttendanceManager
               eventId={selectedEventForAttendance}
               onClose={() => {

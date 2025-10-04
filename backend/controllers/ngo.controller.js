@@ -3,6 +3,50 @@ const Opportunity = require('../models/opportunity.model');
 const Application = require('../models/application.model');
 const { createApplicationStatusNotification, createNewEventNotification } = require('./notification.controller');
 
+// Get NGO profile
+const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password -otp -otpExpires');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    res.json({ success: true, data: user });
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch profile' });
+  }
+};
+
+// Update NGO profile
+const updateProfile = async (req, res) => {
+  try {
+    const { name, email, location, bio, skills, profileImage } = req.body;
+    const update = {};
+    
+    if (name !== undefined) update.name = name;
+    if (email !== undefined) update.email = email;
+    if (location !== undefined) update.location = location;
+    if (bio !== undefined) update.bio = bio;
+    if (skills !== undefined) update.skills = skills;
+    if (profileImage !== undefined) update.profileImage = profileImage;
+    
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      update,
+      { new: true, runValidators: true }
+    ).select('-password -otp -otpExpires');
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    res.json({ success: true, data: user, message: 'Profile updated successfully' });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ success: false, message: 'Failed to update profile', error: error.message });
+  }
+};
+
 // Get NGO Dashboard Stats
 const getDashboardStats = async (req, res) => {
   try {
@@ -1498,6 +1542,8 @@ const getVolunteerAnalytics = async (req, res) => {
 };
 
 module.exports = {
+  getProfile,
+  updateProfile,
   getDashboardStats,
   getRecentActivities,
   getMyEvents,

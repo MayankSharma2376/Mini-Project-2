@@ -166,10 +166,10 @@ export default function VolunteerPreferences({ user, onUpdate }) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 dark:border dark:border-gray-700">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-          <Settings className="h-5 w-5 mr-2 text-green-600" />
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+          <Settings className="h-5 w-5 mr-2 text-green-600 dark:text-green-400" />
           Volunteer Preferences
         </h2>
         <button
@@ -185,14 +185,14 @@ export default function VolunteerPreferences({ user, onUpdate }) {
       <div className="space-y-8">
         {/* Location Section */}
         <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-            <MapPin className="h-5 w-5 mr-2 text-blue-600" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 mb-4 flex items-center">
+            <MapPin className="h-5 w-5 mr-2 text-blue-600 dark:text-blue-400" />
             Location & Travel
           </h3>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Current Location
               </label>
               <div className="flex items-center space-x-3">
@@ -205,7 +205,7 @@ export default function VolunteerPreferences({ user, onUpdate }) {
                   {locationLoading ? 'Getting Location...' : 'Use Current Location'}
                 </button>
                 {preferences.coordinates.latitude && preferences.coordinates.longitude && (
-                  <span className="text-sm text-green-600">
+                  <span className="text-sm text-green-600 dark:text-green-400">
                     ✓ Location set ({preferences.coordinates.latitude.toFixed(4)}, {preferences.coordinates.longitude.toFixed(4)})
                   </span>
                 )}
@@ -213,7 +213,7 @@ export default function VolunteerPreferences({ user, onUpdate }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Maximum Travel Distance: {preferences.maxTravelDistance} km
               </label>
               <input
@@ -222,9 +222,9 @@ export default function VolunteerPreferences({ user, onUpdate }) {
                 max="100"
                 value={preferences.maxTravelDistance}
                 onChange={(e) => setPreferences(prev => ({ ...prev, maxTravelDistance: parseInt(e.target.value) }))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
               />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
                 <span>1 km</span>
                 <span>50 km</span>
                 <span>100 km</span>
@@ -235,11 +235,11 @@ export default function VolunteerPreferences({ user, onUpdate }) {
 
         {/* Waste Type Preferences */}
         <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-            <Target className="h-5 w-5 mr-2 text-green-600" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 mb-4 flex items-center">
+            <Target className="h-5 w-5 mr-2 text-green-600 dark:text-green-400" />
             Waste Type Preferences
           </h3>
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
             Select the types of waste management activities you're interested in:
           </p>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -249,8 +249,8 @@ export default function VolunteerPreferences({ user, onUpdate }) {
                 onClick={() => handleWasteTypeToggle(wasteType.value)}
                 className={`p-3 rounded-lg border-2 text-center transition-all ${
                   preferences.wasteTypePreferences.includes(wasteType.value)
-                    ? 'border-green-500 bg-green-50 text-green-700'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-green-500 bg-green-50 text-green-700 dark:bg-green-900/50 dark:text-green-300'
+                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 dark:text-gray-300'
                 }`}
               >
                 <div className="text-2xl mb-1">{wasteType.icon}</div>
@@ -262,14 +262,14 @@ export default function VolunteerPreferences({ user, onUpdate }) {
 
         {/* Availability */}
         <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-            <Clock className="h-5 w-5 mr-2 text-purple-600" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 mb-4 flex items-center">
+            <Clock className="h-5 w-5 mr-2 text-purple-600 dark:text-purple-400" />
             Availability
           </h3>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Available Days
               </label>
               <div className="grid grid-cols-3 md:grid-cols-7 gap-2">
@@ -279,8 +279,8 @@ export default function VolunteerPreferences({ user, onUpdate }) {
                     onClick={() => handleDayToggle(day.value)}
                     className={`p-2 text-sm font-medium rounded-lg border-2 transition-all ${
                       preferences.availability.days.includes(day.value)
-                        ? 'border-purple-500 bg-purple-50 text-purple-700'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 dark:text-gray-300'
                     }`}
                   >
                     {day.label.slice(0, 3)}
@@ -290,7 +290,7 @@ export default function VolunteerPreferences({ user, onUpdate }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Preferred Time
               </label>
               <select
@@ -299,7 +299,7 @@ export default function VolunteerPreferences({ user, onUpdate }) {
                   ...prev,
                   availability: { ...prev.availability, timePreference: e.target.value }
                 }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 {timePreferences.map((time) => (
                   <option key={time.value} value={time.value}>
@@ -313,8 +313,8 @@ export default function VolunteerPreferences({ user, onUpdate }) {
 
         {/* Experience Level */}
         <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-            <Award className="h-5 w-5 mr-2 text-orange-600" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 mb-4 flex items-center">
+            <Award className="h-5 w-5 mr-2 text-orange-600 dark:text-orange-400" />
             Experience Level
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -324,12 +324,12 @@ export default function VolunteerPreferences({ user, onUpdate }) {
                 onClick={() => setPreferences(prev => ({ ...prev, experienceLevel: level.value }))}
                 className={`p-4 rounded-lg border-2 text-left transition-all ${
                   preferences.experienceLevel === level.value
-                    ? 'border-orange-500 bg-orange-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/50'
+                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                 }`}
               >
-                <div className="font-medium text-gray-900">{level.label}</div>
-                <div className="text-sm text-gray-600 mt-1">{level.description}</div>
+                <div className="font-medium text-gray-900 dark:text-gray-100">{level.label}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">{level.description}</div>
               </button>
             ))}
           </div>
@@ -337,8 +337,8 @@ export default function VolunteerPreferences({ user, onUpdate }) {
 
         {/* Skills */}
         <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-            <Star className="h-5 w-5 mr-2 text-yellow-600" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 mb-4 flex items-center">
+            <Star className="h-5 w-5 mr-2 text-yellow-600 dark:text-yellow-400" />
             Skills & Interests
           </h3>
           
@@ -350,7 +350,7 @@ export default function VolunteerPreferences({ user, onUpdate }) {
                 onChange={(e) => setNewSkill(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAddSkill()}
                 placeholder="Add a skill or interest..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
               />
               <button
                 onClick={handleAddSkill}
@@ -365,12 +365,12 @@ export default function VolunteerPreferences({ user, onUpdate }) {
                 {preferences.skills.map((skill, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-full"
+                    className="inline-flex items-center px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full"
                   >
                     {skill}
                     <button
                       onClick={() => handleRemoveSkill(skill)}
-                      className="ml-2 text-gray-400 hover:text-red-500"
+                      className="ml-2 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400"
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>

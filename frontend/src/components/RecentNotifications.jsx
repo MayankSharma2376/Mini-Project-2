@@ -1,5 +1,5 @@
 import React from "react";
-import { Bell, CheckCircle, XCircle, Clock, Calendar, Users, AlertCircle, ChevronRight } from "lucide-react";
+import { Bell, CheckCircle, XCircle, Clock, Calendar, AlertCircle, ChevronRight } from "lucide-react";
 
 const RecentNotifications = ({ notifications = [], loading = false, onViewAllNotifications }) => {
   
@@ -9,19 +9,19 @@ const RecentNotifications = ({ notifications = [], loading = false, onViewAllNot
     
     switch (type) {
       case 'application_accepted':
-        return <CheckCircle {...iconProps} className="h-5 w-5 text-green-600" />;
+        return <CheckCircle {...iconProps} className="h-5 w-5 text-green-600 dark:text-green-400" />;
       case 'application_rejected':
-        return <XCircle {...iconProps} className="h-5 w-5 text-red-600" />;
+        return <XCircle {...iconProps} className="h-5 w-5 text-red-600 dark:text-red-400" />;
       case 'application_pending':
-        return <Clock {...iconProps} className="h-5 w-5 text-yellow-600" />;
+        return <Clock {...iconProps} className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />;
       case 'event_reminder':
-        return <Calendar {...iconProps} className="h-5 w-5 text-blue-600" />;
+        return <Calendar {...iconProps} className="h-5 w-5 text-blue-600 dark:text-blue-400" />;
       case 'event_cancelled':
-        return <XCircle {...iconProps} className="h-5 w-5 text-red-600" />;
+        return <XCircle {...iconProps} className="h-5 w-5 text-red-600 dark:text-red-400" />;
       case 'event_updated':
-        return <AlertCircle {...iconProps} className="h-5 w-5 text-orange-600" />;
+        return <AlertCircle {...iconProps} className="h-5 w-5 text-orange-600 dark:text-orange-400" />;
       default:
-        return <Bell {...iconProps} className="h-5 w-5 text-gray-600" />;
+        return <Bell {...iconProps} className="h-5 w-5 text-gray-600 dark:text-gray-400" />;
     }
   };
 
@@ -29,19 +29,19 @@ const RecentNotifications = ({ notifications = [], loading = false, onViewAllNot
   const getNotificationBgColor = (type) => {
     switch (type) {
       case 'application_accepted':
-        return 'bg-green-100';
+        return 'bg-green-100 dark:bg-green-900/50';
       case 'application_rejected':
-        return 'bg-red-100';
+        return 'bg-red-100 dark:bg-red-900/50';
       case 'application_pending':
-        return 'bg-yellow-100';
+        return 'bg-yellow-100 dark:bg-yellow-900/50';
       case 'event_reminder':
-        return 'bg-blue-100';
+        return 'bg-blue-100 dark:bg-blue-900/50';
       case 'event_cancelled':
-        return 'bg-red-100';
+        return 'bg-red-100 dark:bg-red-900/50';
       case 'event_updated':
-        return 'bg-orange-100';
+        return 'bg-orange-100 dark:bg-orange-900/50';
       default:
-        return 'bg-gray-100';
+        return 'bg-gray-100 dark:bg-gray-700';
     }
   };
 
@@ -69,51 +69,51 @@ const RecentNotifications = ({ notifications = [], loading = false, onViewAllNot
 
   if (loading) {
     return (
-      <div className="bg-white p-6 rounded-xl shadow-md">
-        <h3 className="text-lg font-semibold text-gray-800 mb-1">Recent Notifications</h3>
-        <p className="text-sm text-gray-500 mb-4">Important updates and reminders.</p>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md dark:border dark:border-gray-700">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1">Recent Notifications</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Important updates and reminders.</p>
         <div className="flex items-center justify-center py-8">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
-          <span className="ml-2 text-gray-600">Loading notifications...</span>
+          <span className="ml-2 text-gray-600 dark:text-gray-300">Loading notifications...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-md h-fit">
-      <h3 className="text-lg font-semibold text-gray-800 mb-1">Recent Notifications</h3>
-      <p className="text-sm text-gray-500 mb-4">Important updates and reminders.</p>
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md dark:border dark:border-gray-700 h-fit">
+      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1">Recent Notifications</h3>
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Important updates and reminders.</p>
       <div className="space-y-2 min-h-[200px]">
         {notifications.length > 0 ? (
           notifications.slice(0, 4).map((notification) => (
             <div 
               key={notification._id || notification.id} 
-              className="flex items-start justify-between p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+              className="flex items-start justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg cursor-pointer transition-colors"
             >
               <div className="flex items-start min-w-0 flex-1">
                 <div className={`flex-shrink-0 h-8 w-8 rounded-full ${getNotificationBgColor(notification.type)} flex items-center justify-center mt-0.5`}>
                   {getNotificationIcon(notification.type)}
                 </div>
                 <div className="ml-3 min-w-0 flex-1">
-                  <p className="text-sm text-gray-800 leading-tight">{notification.message || notification.text}</p>
-                  <p className="text-xs text-gray-500 mt-1">{formatTimeAgo(notification.createdAt || notification.timestamp)}</p>
+                  <p className="text-sm text-gray-800 dark:text-gray-200 leading-tight">{notification.message || notification.text}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{formatTimeAgo(notification.createdAt || notification.timestamp)}</p>
                 </div>
               </div>
-              <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 mt-1" />
+              <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-1" />
             </div>
           ))
         ) : (
           <div className="text-center py-8">
-            <Bell className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-            <p className="text-gray-500 text-sm">No notifications yet</p>
-            <p className="text-xs text-gray-400">Updates will appear here</p>
+            <Bell className="h-12 w-12 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No notifications yet</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">Updates will appear here</p>
           </div>
         )}
       </div>
       <button 
         onClick={onViewAllNotifications}
-        className="mt-4 w-full py-2 text-sm font-semibold text-green-600 border border-green-600 rounded-lg hover:bg-green-50 transition-colors"
+        className="mt-4 w-full py-2 text-sm font-semibold text-green-600 dark:text-green-400 border border-green-600 dark:border-green-500 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/40 transition-colors"
       >
         View All Notifications
       </button>

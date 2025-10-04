@@ -1,24 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { authAPI } from '../services/api';
+import { authAPI, resetBlockedUserFlag } from '../services/api';
+import { useBlockedUser } from '../contexts/BlockedUserContext';
+import { useUser } from '../contexts/UserContext';
 
 
 // Loading Spinner Component
 const LoadingSpinner = () => (
-  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
   </svg>
 );
 
 const EyeIcon = ({ onClick }) => (
-  <svg onClick={onClick} className="w-5 h-5 text-gray-400 cursor-pointer hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+  <svg onClick={onClick} className="w-5 h-5 text-gray-400 dark:text-gray-500 cursor-pointer hover:text-gray-600 dark:hover:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
 
 );
 
-const EyeOffIcon = () => (
-  <svg className="w-5 h-5 text-gray-400 cursor-pointer hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 .946-3.112 3.586-5.545 6.89-6.334M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3l18 18"></path></svg>
+const EyeOffIcon = ({ onClick }) => (
+    <svg onClick={onClick} className="w-5 h-5 text-gray-400 dark:text-gray-500 cursor-pointer hover:text-gray-600 dark:hover:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 .946-3.112 3.586-5.545 6.89-6.334M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3l18 18"></path></svg>
 );
 
 
@@ -26,6 +28,8 @@ const EyeOffIcon = () => (
 export default function AuthPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { updateUser: updateBlockedUser, clearBlockedState } = useBlockedUser();
+  const { updateUser, fetchUserProfile } = useUser();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -136,6 +140,16 @@ export default function AuthPage() {
       setSuccess('Login successful! Redirecting...');
       localStorage.setItem('user', JSON.stringify(response.user));
       localStorage.setItem('token', response.token);
+      
+      // Clear any previous blocked state and update user info
+      clearBlockedState();
+      resetBlockedUserFlag(); // Reset API interceptor flag
+      updateBlockedUser(response.user);
+      
+      // Update user context with fresh data
+      updateUser(response.user);
+      // Fetch latest profile data from backend
+      fetchUserProfile();
 
       setTimeout(() => {
         const userRole = response.user?.role;
@@ -212,11 +226,21 @@ export default function AuthPage() {
       setSuccess("Account verified! Redirecting...");
       localStorage.setItem("user", JSON.stringify(response.user));
       localStorage.setItem("token", response.token);
+      
+      // Clear any previous blocked state and update user info
+      clearBlockedState();
+      updateBlockedUser(response.user);
+      
+      // Update user context with fresh data
+      updateUser(response.user);
+      // Fetch latest profile data from backend
+      fetchUserProfile();
 
       setTimeout(() => {
         const userRole = response.user?.role;
         if (userRole === "admin") navigate("/admin");
         else if (userRole === "volunteer") navigate("/volunteer");
+        else if (userRole === "ngo") navigate("/ngo");
         else navigate("/");
       }, 1500);
     } catch (error) {
@@ -282,11 +306,11 @@ export default function AuthPage() {
       </div>
 
       {/* Right Panel: Login/Registration Form */}
-      <div className="w-full lg:w-1/2 bg-gray-50 flex flex-col max-h-screen">
-        <div className="flex-shrink-0 p-4 lg:p-6 pb-2 bg-gray-50 border-b border-gray-200">
-          <div className="flex bg-gray-200 rounded-lg p-1 w-full max-w-sm mx-auto">
-            <button onClick={() => { setIsLogin(true); setIsOtpStep(false); navigate('/login'); }} className={`w-1/2 p-2 rounded-md font-semibold transition-all ${isLogin ? 'bg-white shadow-md text-[#4f685b] font-bold' : 'text-gray-600'}`}>Login</button>
-            <button onClick={() => { setIsLogin(false); setIsOtpStep(false); navigate('/register'); }} className={`w-1/2 p-2 rounded-md font-semibold transition-all ${!isLogin ? 'bg-white shadow-md text-[#4f685b] font-bold' : 'text-gray-600'}`}>Register</button>
+      <div className="w-full lg:w-1/2 bg-gray-50 dark:bg-gray-900 flex flex-col max-h-screen">
+        <div className="flex-shrink-0 p-4 lg:p-6 pb-2 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex bg-gray-200 dark:bg-gray-800 rounded-lg p-1 w-full max-w-sm mx-auto">
+            <button onClick={() => { setIsLogin(true); setIsOtpStep(false); navigate('/login'); }} className={`w-1/2 p-2 rounded-md font-semibold transition-all ${isLogin ? 'bg-white dark:bg-gray-700 shadow-md text-[#4f685b] dark:text-green-300 font-bold' : 'text-gray-600 dark:text-gray-400'}`}>Login</button>
+            <button onClick={() => { setIsLogin(false); setIsOtpStep(false); navigate('/register'); }} className={`w-1/2 p-2 rounded-md font-semibold transition-all ${!isLogin ? 'bg-white dark:bg-gray-700 shadow-md text-[#4f685b] dark:text-green-300 font-bold' : 'text-gray-600 dark:text-gray-400'}`}>Register</button>
           </div>
         </div>
         <div className="flex-1 overflow-y-auto px-4 lg:px-6 scrollbar-hide">
@@ -296,22 +320,22 @@ export default function AuthPage() {
             {isLogin && !isOtpStep && (
               <>
                 <div className="mb-4">
-                  <h2 className="text-2xl font-bold text-gray-800">Welcome back!</h2>
-                  <p className="text-gray-500">Sign in to your WasteZero account</p>
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Welcome back!</h2>
+                  <p className="text-gray-500 dark:text-gray-400">Sign in to your WasteZero account</p>
                 </div>
-                {error && <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">{error}</div>}
-                {success && <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg">{success}</div>}
+                {error && <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/50 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg">{error}</div>}
+                {success && <div className="mb-4 p-3 bg-green-100 dark:bg-green-900/50 border border-green-400 dark:border-green-700 text-green-700 dark:text-green-300 rounded-lg">{success}</div>}
                 <form className="space-y-4" onSubmit={handleLoginSubmit}>
                   <div>
-                    <label htmlFor="login-email" className="block text-sm font-medium text-gray-600 mb-1">Email</label>
-                    <input id="login-email" type="email" name="email" value={loginData.email} onChange={handleLoginChange} placeholder="Your email" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black placeholder-gray-500" required />
+                    <label htmlFor="login-email" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Email</label>
+                    <input id="login-email" type="email" name="email" value={loginData.email} onChange={handleLoginChange} placeholder="Your email" className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black dark:text-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400" required />
                   </div>
                   <div className="relative">
-                    <label htmlFor="login-password" className="block text-sm font-medium text-gray-600 mb-1">Password</label>
-                    <input id="login-password" type={showPassword ? "text" : "password"} name="password" value={loginData.password} onChange={handleLoginChange} placeholder="Your password" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black placeholder-gray-500" required />
+                    <label htmlFor="login-password" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Password</label>
+                    <input id="login-password" type={showPassword ? "text" : "password"} name="password" value={loginData.password} onChange={handleLoginChange} placeholder="Your password" className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black dark:text-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400" required />
                     <div className="absolute inset-y-0 right-0 pr-3 flex items-center pt-6">
                       <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label="Toggle password visibility">
-                        {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                        {showPassword ? <EyeOffIcon onClick={() => setShowPassword(false)} /> : <EyeIcon onClick={() => setShowPassword(true)} />}
                       </button>
                     </div>
                   </div>
@@ -319,12 +343,13 @@ export default function AuthPage() {
                     <button 
                       type="button" 
                       onClick={() => navigate('/forgot-password')}
-                      className="text-sm text-[#588157] hover:underline"
+                      className="text-sm text-[#588157] dark:text-green-400 hover:underline"
                     >
                       Forgot Password?
                     </button>
                   </div>
-                  <button type="submit" disabled={isLoading} className="w-full py-3 bg-[#588157] text-white rounded-lg font-bold hover:bg-[#4f685b] focus:ring-2 focus:ring-[#588157] focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button type="submit" disabled={isLoading} className="w-full py-3 bg-[#588157] text-white rounded-lg font-bold hover:bg-[#4f685b] focus:ring-2 focus:ring-[#588157] focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                    {isLoading && <LoadingSpinner />}
                     {isLoading ? 'Signing in...' : 'Sign In'}
                   </button>
                 </form>
@@ -335,71 +360,72 @@ export default function AuthPage() {
             {!isLogin && !isOtpStep && (
               <>
                 <div className="mb-4">
-                  <h2 className="text-2xl font-bold text-gray-800">Create a new account</h2>
-                  <p className="text-gray-500">Fill in your details to join WasteZero</p>
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Create a new account</h2>
+                  <p className="text-gray-500 dark:text-gray-400">Fill in your details to join WasteZero</p>
                 </div>
-                {error && <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">{error}</div>}
-                {success && <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg">{success}</div>}
+                {error && <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/50 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg">{error}</div>}
+                {success && <div className="mb-4 p-3 bg-green-100 dark:bg-green-900/50 border border-green-400 dark:border-green-700 text-green-700 dark:text-green-300 rounded-lg">{success}</div>}
                 <form className="space-y-3 pb-6" onSubmit={handleRegisterSubmit}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <label htmlFor="register-name" className="block text-sm font-medium text-gray-600 mb-1">Full Name</label>
-                      <input id="register-name" type="text" name="name" value={registerData.name} onChange={handleRegisterChange} placeholder="Your full name" className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black placeholder-gray-500" required />
+                      <label htmlFor="register-name" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Full Name</label>
+                      <input id="register-name" type="text" name="name" value={registerData.name} onChange={handleRegisterChange} placeholder="Your full name" className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black dark:text-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400" required />
                     </div>
                     <div>
-                      <label htmlFor="register-email" className="block text-sm font-medium text-gray-600 mb-1">Email</label>
-                      <input id="register-email" type="email" name="email" value={registerData.email} onChange={handleRegisterChange} placeholder="Your email" className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black placeholder-gray-500" required />
+                      <label htmlFor="register-email" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Email</label>
+                      <input id="register-email" type="email" name="email" value={registerData.email} onChange={handleRegisterChange} placeholder="Your email" className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black dark:text-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400" required />
                     </div>
                   </div>
                   <div>
-                    <label htmlFor="register-location" className="block text-sm font-medium text-gray-600 mb-1">Location</label>
-                    <input id="register-location" type="text" name="location" value={registerData.location} onChange={handleRegisterChange} placeholder="Your location" className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black placeholder-gray-500" required />
+                    <label htmlFor="register-location" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Location</label>
+                    <input id="register-location" type="text" name="location" value={registerData.location} onChange={handleRegisterChange} placeholder="Your location" className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black dark:text-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400" required />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="relative">
-                      <label htmlFor="register-password" className="block text-sm font-medium text-gray-600 mb-1">Password</label>
-                      <input id="register-password" type={showPassword ? "text" : "password"} name="password" value={registerData.password} onChange={handleRegisterChange} placeholder="Create a password" className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black placeholder-gray-500" required />
+                      <label htmlFor="register-password" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Password</label>
+                      <input id="register-password" type={showPassword ? "text" : "password"} name="password" value={registerData.password} onChange={handleRegisterChange} placeholder="Create a password" className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black dark:text-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400" required />
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pt-6">
                         <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label="Toggle password visibility">
-                          {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                          {showPassword ? <EyeOffIcon onClick={() => setShowPassword(false)} /> : <EyeIcon onClick={() => setShowPassword(true)} />}
                         </button>
                       </div>
                     </div>
                     <div className="relative">
-                      <label htmlFor="register-confirmPassword" className="block text-sm font-medium text-gray-600 mb-1">Confirm Password</label>
-                      <input id="register-confirmPassword" type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={registerData.confirmPassword} onChange={handleRegisterChange} placeholder="Confirm your password" className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black placeholder-gray-500" required />
+                      <label htmlFor="register-confirmPassword" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Confirm Password</label>
+                      <input id="register-confirmPassword" type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={registerData.confirmPassword} onChange={handleRegisterChange} placeholder="Confirm your password" className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black dark:text-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400" required />
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pt-6">
                         <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} aria-label="Toggle confirm password visibility">
-                          {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                          {showConfirmPassword ? <EyeOffIcon onClick={() => setShowConfirmPassword(false)} /> : <EyeIcon onClick={() => setShowConfirmPassword(true)} />}
                         </button>
                       </div>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 !mt-1">*Password must be at least 6 characters long</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 !mt-1">*Password must be at least 6 characters long</p>
                   <div>
-                    <label htmlFor="register-role" className="block text-sm font-medium text-gray-600 mb-1">Role</label>
-                    <select id="register-role" name="role" value={registerData.role} onChange={handleRegisterChange} className="w-full p-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#588157] focus:outline-none appearance-none text-black" required>
+                    <label htmlFor="register-role" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Role</label>
+                    <select id="register-role" name="role" value={registerData.role} onChange={handleRegisterChange} className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-[#588157] focus:outline-none appearance-none text-black dark:text-white" required>
                       <option value="volunteer">Volunteer</option>
                       <option value="admin">Admin</option>
                       <option value="ngo">NGO</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-2">Skills & Interests</label>
-                    <div className="grid grid-cols-2 gap-2 max-h-20 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50 scrollbar-hide">
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Skills & Interests</label>
+                    <div className="grid grid-cols-2 gap-2 max-h-20 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-800/50 scrollbar-hide">
                       {['Waste Collection', 'Recycling Education', 'Community Organizing', 'Environmental Advocacy', 'Data Management', 'Social Media'].map((skill) => (
                         <label key={skill} htmlFor={skill} className="flex items-center space-x-2">
-                          <input id={skill} type="checkbox" value={skill} checked={registerData.skills.includes(skill)} onChange={handleSkillsChange} className="form-checkbox text-[#588157] focus:ring-[#588157] w-3 h-3" />
-                          <span className="text-xs text-gray-700">{skill}</span>
+                          <input id={skill} type="checkbox" value={skill} checked={registerData.skills.includes(skill)} onChange={handleSkillsChange} className="form-checkbox text-[#588157] focus:ring-[#588157] w-3 h-3 bg-gray-200 dark:bg-gray-600 border-gray-300 dark:border-gray-500" />
+                          <span className="text-xs text-gray-700 dark:text-gray-300">{skill}</span>
                         </label>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <label htmlFor="register-bio" className="block text-sm font-medium text-gray-600 mb-1">Bio</label>
-                    <textarea id="register-bio" name="bio" value={registerData.bio} onChange={handleRegisterChange} placeholder="Tell us about yourself..." rows="2" className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black placeholder-gray-500 resize-none" required></textarea>
+                    <label htmlFor="register-bio" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Bio</label>
+                    <textarea id="register-bio" name="bio" value={registerData.bio} onChange={handleRegisterChange} placeholder="Tell us about yourself..." rows="2" className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black dark:text-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400 resize-none" required></textarea>
                   </div>
-                  <button type="submit" disabled={isLoading} className="w-full py-3 bg-[#588157] text-white rounded-lg font-bold hover:bg-[#4f685b] focus:ring-2 focus:ring-[#588157] focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button type="submit" disabled={isLoading} className="w-full py-3 bg-[#588157] text-white rounded-lg font-bold hover:bg-[#4f685b] focus:ring-2 focus:ring-[#588157] focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                    {isLoading && <LoadingSpinner />}
                     {isLoading ? 'Creating Account...' : 'Create Account'}
                   </button>
                 </form>
@@ -410,23 +436,24 @@ export default function AuthPage() {
             {isOtpStep && (
               <div className="space-y-6">
                 <div className="text-center">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-2">Enter OTP</h2>
-                  <p className="text-gray-500 text-sm">We've sent a 4-digit verification code to your email address.</p>
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">Enter OTP</h2>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">We've sent a 4-digit verification code to your email address.</p>
                 </div>
-                {error && <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">{error}</div>}
-                {success && <div className="p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg text-sm">{success}</div>}
+                {error && <div className="p-3 bg-red-100 dark:bg-red-900/50 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg text-sm">{error}</div>}
+                {success && <div className="p-3 bg-green-100 dark:bg-green-900/50 border border-green-400 dark:border-green-700 text-green-700 dark:text-green-300 rounded-lg text-sm">{success}</div>}
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-3 text-center">Verification Code</label>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-3 text-center">Verification Code</label>
                   <div className="flex justify-center gap-3 mb-4">
                     {otp.map((digit, index) => (
-                      <input key={index} type="text" maxLength="1" value={digit} ref={(el) => (inputs.current[index] = el)} onChange={(e) => handleChange(e.target.value, index)} onKeyDown={(e) => handleKeyDown(e, index)} className="w-12 h-12 text-center text-lg font-bold border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-[#588157] focus:outline-none text-black" />
+                      <input key={index} type="text" maxLength="1" value={digit} ref={(el) => (inputs.current[index] = el)} onChange={(e) => handleChange(e.target.value, index)} onKeyDown={(e) => handleKeyDown(e, index)} className="w-12 h-12 text-center text-lg font-bold border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-[#588157] focus:outline-none text-black dark:text-white dark:bg-gray-800" />
                     ))}
                   </div>
                 </div>
-                <button onClick={handleSubmitOtp} disabled={isLoading} className="w-full py-3 bg-[#588157] text-white rounded-lg font-bold hover:bg-[#4f685b] focus:ring-2 focus:ring-[#588157] focus:outline-none transition-colors">
+                <button onClick={handleSubmitOtp} disabled={isLoading} className="w-full py-3 bg-[#588157] text-white rounded-lg font-bold hover:bg-[#4f685b] focus:ring-2 focus:ring-[#588157] focus:outline-none transition-colors flex items-center justify-center">
+                  {isLoading && <LoadingSpinner />}
                   {isLoading ? "Verifying..." : "Verify OTP"}
                 </button>
-                <button type="button" onClick={handleResendOtp} className="w-full py-2 text-sm text-[#588157] hover:underline mt-2">
+                <button type="button" onClick={handleResendOtp} className="w-full py-2 text-sm text-[#588157] dark:text-green-400 hover:underline mt-2">
                   Resend OTP
                 </button>
               </div>

@@ -1,18 +1,38 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { resetBlockedUserFlag } from '../services/api';
 import { SearchIcon, Bell, ChevronDown, User, Settings, LogOut } from 'lucide-react';
 import { useNotifications } from '../contexts/NotificationContext';
+import { useUser } from '../contexts/UserContext';
 
 
 const Navbar = () => {
   const navigate = useNavigate();
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const { unreadCount } = useNotifications();
+  const { user, clearUser, loading, fetchUserProfile } = useUser();
   const dropdownRef = useRef(null);
 
-  // Get user info from localStorage
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  // Fallback user info from localStorage if context is loading
+  const fallbackUser = JSON.parse(localStorage.getItem('user') || '{}');
+  
+  // Use actual user data from UserContext, fallback to localStorage, or show default
+  const displayUser = user || fallbackUser || {
+    name: 'User',
+    email: 'user@example.com',
+    role: 'user'
+  };
+
+  // Fetch user profile if not already loaded and user has token
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token && !user && !loading) {
+      fetchUserProfile();
+    }
+  }, [user, loading, fetchUserProfile]);
+
+
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -29,9 +49,11 @@ const Navbar = () => {
   }, []);
 
   const handleLogout = () => {
-    // Clear localStorage
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
+    // Clear user data from context and localStorage
+    clearUser();
+
+    // Reset blocked user flag to prevent flickering
+    resetBlockedUserFlag();
 
     // Show success message
     toast.success('Logged out successfully!');
@@ -49,7 +71,7 @@ const Navbar = () => {
 
   const handleNotificationClick = () => {
     // Navigate to notifications page based on user role
-    const userRole = user.role || 'volunteer'; // Default to volunteer if no role
+    const userRole = displayUser.role || 'volunteer'; // Default to volunteer if no role
     if (userRole === 'admin') {
       navigate('/admin/notifications');
     } else if (userRole === 'ngo') {
@@ -61,12 +83,12 @@ const Navbar = () => {
   
   return (
     <>
-      <nav className='fixed top-0 left-0 right-0 h-16 z-[100] bg-[#344e41] w-full'>
+      <nav className='fixed top-0 left-0 right-0 h-16 z-[100] bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm w-full'>
         <div className='flex justify-between items-center h-full px-6'>
           {/* left panel - logo */}
           <div className='flex items-center'>
             <img src="/recycle.svg" alt="WasteZero Logo" className="size-11 rounded-full" />
-            <span className="ml-2 text-xl hidden md:block font-semibold text-white">WasteZero</span>
+            <span className="ml-2 text-xl hidden md:block font-semibold text-gray-900 dark:text-white">WasteZero</span>
           </div>
 
           {/* center - navigation items */}
@@ -80,16 +102,16 @@ const Navbar = () => {
 
           {/* right panel - search and avatar */}
           <div className='flex items-center gap-5'>
-            <div className='flex items-center border border-gray-300 rounded-full px-3 py-1 bg-white focus-within:ring-2 focus-within:ring-gray-300 focus-within:ring-opacity-50 transition-all duration-200'>
-              <SearchIcon className='text-gray-400 size-5 mr-2 flex-shrink-0' />
-              <input type="text" placeholder="Search opportunities..." className="outline-none bg-transparent flex-1 text-gray-700 placeholder-gray-400" />
+            <div className='flex items-center border border-gray-300 dark:border-gray-600 rounded-full px-3 py-1 bg-gray-50 dark:bg-gray-800 focus-within:ring-2 focus-within:ring-green-500 dark:focus-within:ring-green-600 transition-all duration-200'>
+              <SearchIcon className='text-gray-400 dark:text-gray-500 size-5 mr-2 flex-shrink-0' />
+              <input type="text" placeholder="Search opportunities..." className="outline-none bg-transparent flex-1 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500" />
             </div>
             <div className="relative">
               <button 
                 onClick={handleNotificationClick}
-                className="p-2 hover:bg-[#588157] rounded-lg transition-colors duration-200 relative"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200 relative"
               >
-                <Bell className='text-white size-5' />
+                <Bell className='text-gray-700 dark:text-gray-300 size-5' />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
                     {unreadCount > 99 ? '99+' : unreadCount}
@@ -101,39 +123,56 @@ const Navbar = () => {
             {/* Profile Dropdown */}
             <div className='relative z-50' ref={dropdownRef}>
               <div
-                className='flex items-center gap-2 cursor-pointer hover:bg-[#588157] rounded-lg p-2 transition-colors duration-200'
+                className='flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg p-2 transition-colors duration-200'
                 onClick={handleProfileClick}
               >
-                <div className='size-8 bg-[#dad7cd] opacity-70 hover:opacity-100 rounded-full flex items-center justify-center'>
-                  <User className='w-4 h-4 text-[#344e41]' />
+                <div className='size-8 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center'>
+                  <User className='w-4 h-4 text-green-700 dark:text-green-300' />
                 </div>
-                <span className='text-white text-sm font-medium hidden md:block'>
-                  {user.name || 'User'}
+                <span className='text-gray-900 dark:text-gray-100 text-sm font-medium hidden md:block'>
+                  {displayUser.name || 'User'}
                 </span>
-                <ChevronDown className='w-4 h-4 text-white hidden md:block' />
+                <ChevronDown className='w-4 h-4 text-gray-700 dark:text-gray-300 hidden md:block' />
               </div>
 
               {/* Dropdown Menu */}
               {showProfileDropdown && (
-                <div className='absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50'>
-                  <div className='px-4 py-2 border-b border-gray-100'>
-                    <p className='text-sm font-medium text-gray-900'>{user.name || 'User'}</p>
-                    <p className='text-sm text-gray-500'>{user.email || 'user@example.com'}</p>
-                    <span className='inline-block px-2 py-1 mt-1 text-xs bg-green-100 text-green-800 rounded-full'>
-                      {user.role || 'User'}
-                    </span>
+                <div className='absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50'>
+                  <div className='px-4 py-2 border-b border-gray-100 dark:border-gray-700'>
+                    <p className='text-sm font-medium text-gray-900 dark:text-gray-100'>{displayUser.name || 'User'}</p>
+                    <p className='text-sm text-gray-500 dark:text-gray-400'>{displayUser.email || 'user@example.com'}</p>
+                    <div className='flex items-center justify-between mt-1'>
+                      <span className='inline-block px-2 py-1 text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 rounded-full'>
+                        {displayUser.role ? displayUser.role.toUpperCase() : 'USER'}
+                      </span>
+                      {displayUser.location && (
+                        <span className='text-xs text-gray-400 dark:text-gray-500'>
+                          📍 {displayUser.location}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <button
-                    className='w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200'
-                    onClick={() => setShowProfileDropdown(false)}
+                    className='w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
+                    onClick={() => {
+                      const userRole = displayUser.role || 'volunteer';
+                      if (userRole === 'admin') {
+                        navigate('/admin/profile');
+                      } else if (userRole === 'ngo') {
+                        navigate('/ngo/profile');
+                      } else {
+                        navigate('/volunteer/profile');
+                      }
+                      setShowProfileDropdown(false);
+                    }}
                   >
                     <User className='w-4 h-4' />
                     My Profile
                   </button>
 
                   <button
-                    className='w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200'
+                    className='w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
                     onClick={() => setShowProfileDropdown(false)}
                   >
                     <Settings className='w-4 h-4' />
@@ -143,7 +182,7 @@ const Navbar = () => {
                   <hr className='my-1' />
 
                   <button
-                    className='w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200'
+                    className='w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200'
                     onClick={handleLogout}
                   >
                     <LogOut className='w-4 h-4' />
