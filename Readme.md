@@ -967,6 +967,6 @@ If you discover a security vulnerability, please email security@wastezero.com di
 
 Made with ❤️ by Team A | Infosys Internship August 2025
 
-[Website](https://wastezero.com) • [Documentation](https://docs.wastezero.com) • [Report Bug](https://github.com/wastezero/issues) • [Request Feature](https://github.com/wastezero/issues)
+[Website](https://NotYetDeployed.com) • [Documentation](https://docs.wastezero.com) • [Report Bug](https://github.com/springboardmentor-104/WasteZero_Infosys_Internship_Aug2025_Team_01/issues) • [Request Feature](https://github.com/springboardmentor-104/WasteZero_Infosys_Internship_Aug2025_Team_01/issues)
 
 </div>
