@@ -933,13 +933,8 @@ Permission to use, copy, modify, and/or distribute this software for any purpose
 - **Documentation**: Check this README and inline code comments
 - **Issues**: Create a GitHub issue for bugs or feature requests
 - **Discussions**: Use GitHub Discussions for questions
-- **Email**: support@wastezero.com (if available)
 
 ### Team Contact
-- **Project Lead**: [Name] - [Email]
-- **Backend Team**: [Team Contact]
-- **Frontend Team**: [Team Contact]
-- **DevOps**: [Team Contact]
 
 ### Reporting Security Issues
 If you discover a security vulnerability, please email security@wastezero.com directly instead of creating a public issue.
@@ -963,27 +958,6 @@ If you discover a security vulnerability, please email security@wastezero.com di
 - ✅ Professional email templates
 - ✅ NotificationContext for state management
 - ✅ Settings page with preferences
-
-### Upcoming Features (v1.1)
-- 🔄 Mobile application (React Native)
-- 🔄 Push notifications
-- 🔄 Gamification and leaderboards
-- 🔄 Social media integration
-- 🔄 Advanced analytics with ML insights
-- 🔄 Multi-language support
-- 🔄 QR code-based check-in system
-- 🔄 Volunteer badges and achievements
-
-### Future Enhancements (v2.0)
-- 🔮 **True AI/ML matching** with neural networks and learning from user behavior
-- 🔮 Predictive analytics for volunteer retention
-- 🔮 Blockchain for impact verification
-- 🔮 Integration with waste management services
-- 🔮 Corporate partnership program
-- 🔮 Mobile check-in with geolocation
-- 🔮 AR features for environmental education
-- 🔮 Community forums and discussions
-- 🔮 Carbon footprint calculator
 
 ---
 
