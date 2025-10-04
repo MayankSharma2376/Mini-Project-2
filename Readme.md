@@ -1,11 +1,7 @@
 # WasteZero - Environmental Impact Management Platform
 
 [![React](https://img.shields.io/badge/React-19.1.1-61dafb?style=flat&logo=react)](https://reactjs.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-Express-339933?styl│   │   ├── controllers/                      # API route handlers
-│   │   ├── auth.controller.js           # Authentication & registration
-│   │   ├── admin.controller.js          # Admin user management & blocking
-│   │   ├── matching.controller.js       # Smart matching algorithm
-│   │   ├── message.controller.js        # Real-time messaging logict&logo=node.js)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=node.js)](https://nodejs.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Database-47A248?style=flat&logo=mongodb)](https://mongodb.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38b2ac?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
 [![Socket.IO](https://img.shields.io/badge/Socket.IO-4.8.1-010101?style=flat&logo=socket.io)](https://socket.io/)
