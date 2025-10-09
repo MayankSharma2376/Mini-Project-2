@@ -1,6 +1,8 @@
 const Conversation = require("../models/conversation.model.js");
 const Message = require("../models/message.model.js");
 const User = require("../models/user.model.js");
+const Application = require("../models/application.model.js");
+const Opportunity = require("../models/opportunity.model.js");
 const { getReceiverSocketId, io } = require("../socket/socket.js");
 
 // Helper function to check if two users can communicate
@@ -12,6 +14,29 @@ const canCommunicate = (senderRole, receiverRole) => {
     };
     
     return allowedCommunications[senderRole]?.includes(receiverRole) || false;
+};
+
+// Helper to check if an NGO and a Volunteer have a valid relationship for messaging
+// Rule: The volunteer must be ACCEPTED (registered) for at least one opportunity created by the NGO
+const hasNGOVolunteerRelationship = async (ngoId, volunteerId) => {
+    try {
+        // Get all event ids created by this NGO
+        const ngoEvents = await Opportunity.find({ createdBy: ngoId }).select('_id');
+        if (!ngoEvents || ngoEvents.length === 0) return false;
+        const eventIds = ngoEvents.map(e => e._id);
+
+        // Look for an accepted application by this volunteer to any of the NGO events
+        const app = await Application.findOne({
+            volunteerId,
+            opportunityId: { $in: eventIds },
+            status: 'accepted'
+        }).select('_id');
+
+        return !!app;
+    } catch (e) {
+        console.error('Error checking NGO-Volunteer relationship:', e);
+        return false;
+    }
 };
 
 // --- SEND MESSAGE (Enhanced with role-based validation) ---
@@ -33,6 +58,18 @@ const sendMessage = async (req, res) => {
             return res.status(403).json({ 
                 error: "Communication not allowed between these user types" 
             });
+        }
+
+        // Additional restriction: NGO <-> Volunteer messaging only if there is an accepted registration link
+        if ((senderRole === 'ngo' && receiver.role === 'volunteer') || (senderRole === 'volunteer' && receiver.role === 'ngo')) {
+            const ngoId = senderRole === 'ngo' ? senderId : receiverId;
+            const volunteerId = senderRole === 'volunteer' ? senderId : receiverId;
+            const allowed = await hasNGOVolunteerRelationship(ngoId, volunteerId);
+            if (!allowed) {
+                return res.status(403).json({
+                    error: 'Messaging is only allowed between NGOs and volunteers who are registered (accepted) for the NGO\'s events'
+                });
+            }
         }
 
         let conversation = await Conversation.findOne({
@@ -86,6 +123,18 @@ const getMessages = async (req, res) => {
             return res.status(403).json({ 
                 error: "Communication not allowed between these user types" 
             });
+        }
+
+        // Additional restriction for reading conversation as well
+        if ((senderRole === 'ngo' && receiver.role === 'volunteer') || (senderRole === 'volunteer' && receiver.role === 'ngo')) {
+            const ngoId = senderRole === 'ngo' ? senderId : userToChatId;
+            const volunteerId = senderRole === 'volunteer' ? senderId : userToChatId;
+            const allowed = await hasNGOVolunteerRelationship(ngoId, volunteerId);
+            if (!allowed) {
+                return res.status(403).json({
+                    error: 'You can only access conversations where the volunteer is accepted for one of the NGO\'s events'
+                });
+            }
         }
 
         // Find conversation containing both users

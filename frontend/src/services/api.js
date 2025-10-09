@@ -332,8 +332,8 @@ export const volunteerAPI = {
   },
 
   // Opportunity browsing
-  getAllOpportunities: async (params = {}) => {
-    const response = await api.get('/volunteer/opportunities', { params });
+  getAllOpportunities: async (params = {}, config = {}) => {
+    const response = await api.get('/volunteer/opportunities', { params, ...config });
     return response.data;
   },
 

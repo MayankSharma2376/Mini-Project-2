@@ -1,41 +1,89 @@
-import React, { useState } from 'react';
-import { FaRecycle } from 'react-icons/fa';
-import { FiMenu, FiX } from 'react-icons/fi'; // Icons for hamburger menu
+import React, { useState, useEffect } from 'react';
+import { FaRecycle, FaLeaf } from 'react-icons/fa';
+import { FiMenu, FiX } from 'react-icons/fi';
+import { useTheme } from '../contexts/ThemeContext';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const { isDarkMode } = useTheme();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const navLinks = [
+    { href: '#services', text: 'Services' },
+    { href: '#mission', text: 'Our Mission' },
     { href: '#about', text: 'About' },
-    { href: '#contact', text: 'Contact Us' },
+    { href: '#contact', text: 'Contact' },
   ];
 
   return (
-    <header className="bg-[#2f4f39] sticky top-0 z-50 py-4 shadow-lg">
-      <div className="container mx-auto flex items-center justify-between px-4">
+    <header 
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        scrolled 
+          ? (isDarkMode ? 'bg-gray-900 shadow-xl py-3' : 'bg-white shadow-xl py-3')
+          : 'bg-gradient-to-r from-emerald-900/95 via-green-800/95 to-teal-900/95 backdrop-blur-md py-5'
+      }`}
+    >
+      <div className="container mx-auto flex items-center justify-between px-4 lg:px-8">
         {/* Logo */}
-        <div className="flex items-center gap-2">
-          <FaRecycle className="text-white text-2xl" />
-          <h1 className="text-white text-2xl font-bold">Waste Zero</h1>
+        <div className="flex items-center gap-3 group cursor-pointer">
+          <div className="relative">
+            <FaRecycle className={`text-3xl transition-all duration-300 ${
+              scrolled ? 'text-emerald-600' : 'text-emerald-400'
+            } group-hover:rotate-180`} />
+            <FaLeaf className={`absolute -top-1 -right-1 text-xs transition-all duration-300 ${
+              scrolled ? 'text-green-500' : 'text-green-300'
+            }`} />
+          </div>
+          <div>
+            <h1 className={`text-2xl lg:text-3xl font-bold tracking-tight transition-colors duration-300 ${
+              scrolled ? (isDarkMode ? 'text-white' : 'text-gray-900') : 'text-white'
+            }`}>
+              Waste<span className={scrolled ? 'text-emerald-600' : 'text-emerald-400'}>Zero</span>
+            </h1>
+            <p className={`text-xs tracking-widest transition-colors duration-300 ${
+              scrolled ? (isDarkMode ? 'text-gray-400' : 'text-gray-600') : 'text-emerald-200'
+            }`}>
+              Sustainable Future
+            </p>
+          </div>
         </div>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
-          <ul className="flex items-center gap-6 list-none">
+        <nav className="hidden md:flex items-center gap-8">
+          <ul className="flex items-center gap-8 list-none">
             {navLinks.map((link) => (
               <li key={link.href}>
                 <a
                   href={link.href}
-                  className="text-white font-medium text-base hover:text-green-200 transition-colors duration-300"
+                  className={`font-medium text-base relative group transition-colors duration-300 ${
+                    scrolled 
+                      ? (isDarkMode ? 'text-gray-300 hover:text-emerald-400' : 'text-gray-700 hover:text-emerald-600')
+                      : 'text-white hover:text-emerald-300'
+                  }`}
                 >
                   {link.text}
+                  <span className={`absolute -bottom-1 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
+                    scrolled ? 'bg-emerald-600' : 'bg-emerald-400'
+                  }`}></span>
                 </a>
               </li>
             ))}
           </ul>
           <a
             href="#pickup"
-            className="bg-[#6ca06c] text-white font-semibold py-2 px-5 rounded-full text-sm hover:bg-[#5a8a5a] transition-colors duration-300"
+            className={`font-semibold py-3 px-6 rounded-full text-sm transition-all duration-300 transform hover:scale-105 hover:shadow-lg ${
+              scrolled
+                ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-700 hover:to-green-700'
+                : 'bg-white text-emerald-900 hover:bg-emerald-50'
+            }`}
           >
             Schedule Pickup
           </a>
@@ -45,38 +93,42 @@ const Header = () => {
         <div className="md:hidden">
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="text-white focus:outline-none"
+            className={`focus:outline-none transition-colors duration-300 ${
+              scrolled ? (isDarkMode ? 'text-white' : 'text-gray-900') : 'text-white'
+            }`}
             aria-label="Toggle menu"
           >
-            {isMenuOpen ? (
-              <FiX size={24} />
-            ) : (
-              <FiMenu size={24} />
-            )}
+            {isMenuOpen ? <FiX size={28} /> : <FiMenu size={28} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu (conditionally rendered) */}
+      {/* Mobile Menu */}
       {isMenuOpen && (
-        <nav className="md:hidden mt-4">
-          <ul className="flex flex-col items-center gap-4 list-none">
+        <nav className={`md:hidden mt-4 shadow-2xl rounded-b-2xl ${
+          isDarkMode ? 'bg-gray-900' : 'bg-white'
+        }`}>
+          <ul className="flex flex-col items-center gap-1 list-none py-4">
             {navLinks.map((link) => (
-              <li key={link.href}>
+              <li key={link.href} className="w-full">
                 <a
                   href={link.href}
                   onClick={() => setIsMenuOpen(false)}
-                  className="text-white font-medium text-base hover:text-green-200"
+                  className={`block font-medium text-base py-3 px-6 transition-colors duration-200 ${
+                    isDarkMode 
+                      ? 'text-gray-300 hover:bg-gray-800 hover:text-emerald-400' 
+                      : 'text-gray-700 hover:bg-emerald-50 hover:text-emerald-600'
+                  }`}
                 >
                   {link.text}
                 </a>
               </li>
             ))}
-            <li>
+            <li className="w-full px-6 mt-2">
               <a
                 href="#pickup"
                 onClick={() => setIsMenuOpen(false)}
-                className="bg-[#6ca06c] text-white font-semibold py-2 px-5 rounded-full text-sm hover:bg-[#5a8a5a] w-full text-center block"
+                className="block bg-gradient-to-r from-emerald-600 to-green-600 text-white font-semibold py-3 px-6 rounded-full text-center hover:from-emerald-700 hover:to-green-700 transition-all duration-300"
               >
                 Schedule Pickup
               </a>

@@ -123,5 +123,7 @@ opportunitySchema.virtual('spotsRemaining').get(function() {
 opportunitySchema.index({ createdBy: 1, status: 1 });
 opportunitySchema.index({ date: 1, status: 1 });
 opportunitySchema.index({ category: 1, status: 1 });
+// Helpful partial index for text-like searches (regex)
+opportunitySchema.index({ title: 1, description: 1, location: 1, category: 1 });
 
 module.exports = mongoose.model('Opportunity', opportunitySchema);

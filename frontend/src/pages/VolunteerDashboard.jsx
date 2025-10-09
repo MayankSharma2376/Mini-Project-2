@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Calendar, 
   MapPin, 
@@ -32,6 +32,7 @@ import WasteZeroAnalytics from './AnalyticDashboard';
 
 export default function VolunteerDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [opportunities, setOpportunities] = useState([]);
   const [applications, setApplications] = useState([]);
@@ -50,6 +51,8 @@ export default function VolunteerDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [enlargedImage, setEnlargedImage] = useState(null);
+  const highlightIdRef = useRef(null);
+  const highlightedOnceRef = useRef(false);
   // const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
 
   // // --- Dark Mode Logic ---
@@ -71,9 +74,49 @@ export default function VolunteerDashboard() {
 
   // Load dashboard data
   useEffect(() => {
+    // Pick up any global search term set by Navbar or URL params
+    try {
+      const params = new URLSearchParams(location.search);
+      const tab = params.get('tab');
+      const id = params.get('id');
+      if (tab === 'opportunities') setActiveTab('opportunities');
+      if (id) highlightIdRef.current = id;
+      // Explicitly do NOT sync navbar query into the in-page search input.
+      // We only switch tab/highlight. The page search remains user-controlled.
+    } catch {}
     loadDashboardData();
     loadUserData();
   }, []);
+
+  // React to changes in URL query instantly (no reload needed)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(location.search);
+      const tab = params.get('tab');
+      const id = params.get('id');
+      if (tab === 'opportunities') setActiveTab('opportunities');
+      if (id) {
+        // allow re-highlighting when a new id arrives
+        highlightIdRef.current = id;
+        highlightedOnceRef.current = false;
+      }
+    } catch {}
+  }, [location.search]);
+
+  // After opportunities load, scroll to and briefly highlight the targeted one
+  useEffect(() => {
+    if (!highlightIdRef.current || highlightedOnceRef.current === true) return;
+    const id = highlightIdRef.current;
+    const el = document.getElementById(`opp-${id}`);
+    if (el) {
+      highlightedOnceRef.current = true;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('ring-4', 'ring-green-400/60');
+      setTimeout(() => {
+        el.classList.remove('ring-4', 'ring-green-400/60');
+      }, 1600);
+    }
+  }, [opportunities]);
 
   // Load user data for preferences
   const loadUserData = async () => {
@@ -99,7 +142,7 @@ export default function VolunteerDashboard() {
       
       const [statsResponse, opportunitiesResponse, applicationsResponse, notificationsResponse] = await Promise.all([
         volunteerAPI.getDashboardStats(),
-        volunteerAPI.getAllOpportunities(),
+        volunteerAPI.getAllOpportunities({ limit: 60, includeMatched: 'true' }),
         volunteerAPI.getMyApplications(),
         volunteerAPI.getNotifications().catch(err => {
           console.log('Notifications endpoint might not exist:', err);
@@ -219,8 +262,11 @@ console.log('Stats response:', statsResponse);
 
   // Filter opportunities based on search and category
   const filteredOpportunities = opportunities.filter(opportunity => {
-    const matchesSearch = opportunity.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          opportunity.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const q = searchTerm.toLowerCase();
+    const matchesSearch = (opportunity.title || '').toLowerCase().includes(q) ||
+                          (opportunity.description || '').toLowerCase().includes(q) ||
+                          (opportunity.location || '').toLowerCase().includes(q) ||
+                          (opportunity.category || '').toLowerCase().includes(q);
     const matchesCategory = filterCategory === 'all' || opportunity.category === filterCategory;
      // Show both active and inactive events
     return matchesSearch && matchesCategory;
@@ -375,7 +421,7 @@ console.log('Stats response:', statsResponse);
       {/* Opportunities Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredOpportunities.map(opportunity => (
-          <div key={opportunity._id} className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border overflow-hidden transition-all hover:shadow-md ${
+          <div id={`opp-${opportunity._id}`} data-opp-id={opportunity._id} key={opportunity._id} className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border overflow-hidden transition-shadow duration-200 hover:shadow-md ${
             opportunity.isMatched ? 'border-green-300 dark:border-green-600 ring-2 ring-green-100 dark:ring-green-900/50' : 'border-gray-200 dark:border-gray-700'
           }`}>
             {/* Match Score Badge */}

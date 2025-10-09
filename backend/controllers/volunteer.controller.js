@@ -23,7 +23,7 @@ const getProfile = async (req, res) => {
 // Update volunteer profile
 const updateProfile = async (req, res) => {
   try {
-  const { name, email, location, bio, skills, profileImage } = req.body;
+  const { name, email, location, bio, skills, profileImage, bannerImage } = req.body;
     const update = {};
     if (name !== undefined) update.name = name;
     if (email !== undefined) update.email = email;
@@ -31,6 +31,7 @@ const updateProfile = async (req, res) => {
     if (bio !== undefined) update.bio = bio;
   if (Array.isArray(skills)) update.skills = skills;
   if (profileImage !== undefined) update.profileImage = profileImage; // accept base64 / URL
+  if (bannerImage !== undefined) update.bannerImage = bannerImage; // accept base64 / URL
 
     const user = await User.findByIdAndUpdate(
       req.user.id,
@@ -144,7 +145,7 @@ const getAllOpportunities = async (req, res) => {
     console.log('getAllOpportunities called'); // Debug log
     
     // Query parameters for filtering
-    const { category, location, page = 1, limit = 10, includeMatched = 'true' } = req.query;
+  const { category, location, page = 1, limit = 10, includeMatched = 'true', q } = req.query;
     
     // Build query
     const query = {}; // Remove status filter to show all events
@@ -153,6 +154,19 @@ const getAllOpportunities = async (req, res) => {
     }
     if (location) {
       query.location = { $regex: location, $options: 'i' };
+    }
+    if (q && String(q).trim().length > 0) {
+      const text = String(q).trim();
+      const regex = { $regex: text, $options: 'i' };
+      // Search across multiple fields
+      query.$or = [
+        { title: regex },
+        { description: regex },
+        { location: regex },
+        { category: regex },
+        { requiredSkills: regex },
+        { wasteTypes: regex }
+      ];
     }
     
     // Calculate pagination

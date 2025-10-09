@@ -98,6 +98,7 @@ const MyProfile = () => {
           setOriginalBio(profileData.bio || '');
           setOriginalSkills(Array.isArray(profileData.skills) ? profileData.skills : []);
           if (profileData.profileImage) setProfileImage(profileData.profileImage);
+          if (profileData.bannerImage) setBannerImage(profileData.bannerImage);
         } catch (err) { 
           console.error('Error fetching profile:', err);
           // Use user from context as fallback
@@ -109,6 +110,7 @@ const MyProfile = () => {
             setOriginalBio(user.bio || '');
             setOriginalSkills(Array.isArray(user.skills) ? user.skills : []);
             if (user.profileImage) setProfileImage(user.profileImage);
+            if (user.bannerImage) setBannerImage(user.bannerImage);
           }
         }
         
@@ -192,7 +194,8 @@ const MyProfile = () => {
         location: location || originalLocation,
         bio: bio || originalBio,
         skills: parsedSkillsEdited.length ? parsedSkillsEdited : originalSkills,
-        profileImage
+        profileImage,
+        bannerImage
       };
       
       // Use appropriate API based on user role
@@ -222,6 +225,10 @@ const MyProfile = () => {
       setOriginalLocation(data.location || originalLocation);
       setOriginalBio(data.bio || originalBio);
       setOriginalSkills(Array.isArray(data.skills) ? data.skills : originalSkills);
+      // Sync banner image from server response (if any)
+      if (typeof data.bannerImage === 'string') {
+        setBannerImage(data.bannerImage);
+      }
     } catch (e) {
       console.error('Error updating profile:', e);
       // silent fail UI already shows edit state
@@ -689,7 +696,7 @@ const MyProfile = () => {
         <Side />
         <div className="flex-1 flex flex-col bg-gray-100 dark:bg-gray-900">
           <div
-            className={`h-56 w-full relative ${activeTab === 'edit' ? 'cursor-pointer group' : ''}`}
+            className={`h-40 md:h-56 w-full relative ${activeTab === 'edit' ? 'cursor-pointer group' : ''}`}
             onClick={openBannerPicker}
             style={{
               backgroundImage: bannerImage ? `url(${bannerImage})` : 'linear-gradient(to right,#255037,#1f4430,#183628)',
@@ -708,8 +715,12 @@ const MyProfile = () => {
             )}
           </div>
           <div className="relative">
-            <div className={`max-w-7xl mx-auto px-8 -mt-32 flex gap-10`}>
-              <div className="flex-1 pt-40 pb-16">
+            <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 md:-mt-28 lg:-mt-32 flex flex-col lg:flex-row gap-6 lg:gap-10`}>
+              {/* Mobile Profile Card / Preview (stacked) */}
+              <div className="lg:hidden">
+                {activeTab === 'view' ? <ProfileCard /> : <EditPreviewCard />}
+              </div>
+              <div className="flex-1 pt-8 md:pt-16 lg:pt-40 pb-16">
                 <div className="mb-4">
                   <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">My Profile</h1>
                   <p className="text-gray-600 dark:text-gray-400 mb-3 text-sm">Manage your account information and settings.</p>
@@ -727,14 +738,14 @@ const MyProfile = () => {
                 {activeTab === 'view' ? renderViewProfile() : renderEditProfile()}
               </div>
               {activeTab === 'view' && (
-                <div className="w-80 flex-shrink-0 self-start sticky top-36">
-                  {/* Sticky profile card */}
+                <div className="hidden lg:block w-80 flex-shrink-0 self-start sticky top-36">
+                  {/* Sticky profile card (desktop) */}
                   <ProfileCard />
                 </div>
               )}
               {activeTab === 'edit' && (
-                <div className="w-80 flex-shrink-0 self-start sticky top-36">
-                  {/* Sticky live preview card */}
+                <div className="hidden lg:block w-80 flex-shrink-0 self-start sticky top-36">
+                  {/* Sticky live preview card (desktop) */}
                   <EditPreviewCard />
                 </div>
               )}

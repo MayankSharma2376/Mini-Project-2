@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
 import { authAPI } from '../services/api';
@@ -164,20 +164,18 @@ function Forgot_Password() {
   };
 
   return (
-    <div className="min-h-screen max-h-screen flex flex-col lg:flex-row overflow-hidden">
-      {/* Left Panel: Branding and Features */}
+    <div className="h-screen flex flex-col lg:flex-row overflow-hidden">
+      {/* Left Panel: Branding and Features 
+        Hidden by default, shown only on large screens (lg:flex) and takes half width on lg screens.
+      */}
       <div 
-        className="w-full lg:w-1/2 bg-cover bg-center relative max-h-screen overflow-hidden"
+        className="w-full lg:w-1/2 bg-cover bg-center relative hidden lg:block h-screen overflow-hidden"
         style={{
           backgroundImage: 'linear-gradient(135deg, rgba(34, 139, 34, 0.85) 0%, rgba(0, 100, 0, 0.75) 50%, rgba(0, 0, 0, 0.6) 100%), url("./Waste.jpg")',
-          backgroundAttachment: 'fixed',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-br from-green-800/60 via-green-900/40 to-black/70"></div>
-        <div className="relative z-10 px-6 lg:px-10 py-8 text-white h-full flex flex-col justify-between min-h-screen max-h-screen overflow-y-auto">
+        <div className="relative z-10 px-6 lg:px-10 py-8 text-white h-full flex flex-col justify-between overflow-y-auto">
           {/* Logo and Brand Name */}
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30">
@@ -189,7 +187,7 @@ function Forgot_Password() {
           </div>
 
           {/* Main Content Container */}
-          <div className="flex-1 flex flex-col justify-center space-y-6">
+          <div className="flex-1 flex flex-col justify-center space-y-6 pt-10 pb-10">
             {/* Slogan and Description */}
             <div className="space-y-4">
               <h2 className="text-2xl lg:text-3xl font-bold leading-tight tracking-tight">
@@ -204,7 +202,7 @@ function Forgot_Password() {
             </div>
 
             {/* Feature Cards Section */}
-            <div className="grid grid-cols-1 gap-3 max-w-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 max-w-sm">
               {/* Feature Card 1 */}
               <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 hover:bg-white/15 transition-all duration-300 hover:transform hover:scale-[1.02]">
                 <div className="flex items-center gap-3">
@@ -254,7 +252,7 @@ function Forgot_Password() {
 
           {/* Bottom Stats */}
           <div className="pt-6 border-t border-white/20">
-            <div className="flex items-center justify-center gap-8">
+            <div className="flex flex-wrap items-center justify-center gap-y-2 gap-x-8">
               <div className="text-center">
                 <div className="text-xl font-bold text-green-300">50K+</div>
                 <div className="text-xs text-gray-300 font-light">Volunteers</div>
@@ -272,8 +270,10 @@ function Forgot_Password() {
         </div>
       </div>
 
-      {/* Right Panel: Password Reset Form */}
-      <div className="w-full lg:w-1/2 bg-gray-50 dark:bg-gray-900 flex flex-col max-h-screen">
+      {/* Right Panel: Password Reset Form 
+        Takes full width on all screens (w-full).
+      */}
+      <div className="w-full lg:w-1/2 bg-gray-50 dark:bg-gray-900 flex flex-col h-screen">
         {/* Fixed Header */}
         <div className="flex-shrink-0 p-4 lg:p-6 pb-2 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
           <div className="max-w-sm mx-auto">
@@ -291,7 +291,7 @@ function Forgot_Password() {
 
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto px-4 lg:px-6 scrollbar-hide">
-          <div className="max-w-sm mx-auto w-full py-6">
+          <div className="max-w-sm mx-auto w-full py-6 md:py-10">
             
             {/* Step 1: Email Input */}
             {step === "email" && (
@@ -334,17 +334,6 @@ function Forgot_Password() {
                   {isLoading && <LoadingSpinner />}
                   {isLoading ? 'Sending OTP...' : 'Send OTP'}
                 </button>
-                
-                {/* Back to Login Link */}
-                <div className="text-center">
-                  <button 
-                    type="button" 
-                    onClick={() => navigate('/login')}
-                    className="text-sm text-[#588157] dark:text-green-400 hover:underline"
-                  >
-                    Back to Login
-                  </button>
-                </div>
               </div>
             )}
 
@@ -418,42 +407,46 @@ function Forgot_Password() {
                 )}
 
                 {/* New Password */}
-                <div className="relative">
+                <div>
                   <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">New Password</label>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter new password"
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black dark:text-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400 password-input"
-                    autoComplete="new-password"
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pt-6">
-                    {showPassword ? (
-                      <EyeOffIcon onClick={() => setShowPassword(false)} />
-                    ) : (
-                      <EyeIcon onClick={() => setShowPassword(true)} />
-                    )}
+                  <div className="relative"> {/* New relative wrapper for input and icon */}
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter new password"
+                      className="w-full p-3 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black dark:text-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400"
+                      autoComplete="new-password"
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      {showPassword ? (
+                        <EyeOffIcon onClick={() => setShowPassword(false)} />
+                      ) : (
+                        <EyeIcon onClick={() => setShowPassword(true)} />
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* Confirm Password */}
-                <div className="relative">
+                <div>
                   <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Confirm Password</label>
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black dark:text-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400 password-input"
-                    autoComplete="new-password"
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pt-6">
-                    {showConfirmPassword ? (
-                      <EyeOffIcon onClick={() => setShowConfirmPassword(false)} />
-                    ) : (
-                      <EyeIcon onClick={() => setShowConfirmPassword(true)} />
-                    )}
+                  <div className="relative"> {/* New relative wrapper for input and icon */}
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm new password"
+                      className="w-full p-3 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#588157] focus:outline-none text-black dark:text-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400"
+                      autoComplete="new-password"
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      {showConfirmPassword ? (
+                        <EyeOffIcon onClick={() => setShowConfirmPassword(false)} />
+                      ) : (
+                        <EyeIcon onClick={() => setShowConfirmPassword(true)} />
+                      )}
+                    </div>
                   </div>
                 </div>
 

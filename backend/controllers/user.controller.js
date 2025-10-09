@@ -19,7 +19,7 @@ const getProfile = async (req, res) => {
 // Update user profile (works for all roles)
 const updateProfile = async (req, res) => {
   try {
-    const { name, email, location, bio, skills, profileImage } = req.body;
+  const { name, email, location, bio, skills, profileImage, bannerImage } = req.body;
     const update = {};
     
     if (name !== undefined) update.name = name;
@@ -27,7 +27,8 @@ const updateProfile = async (req, res) => {
     if (location !== undefined) update.location = location;
     if (bio !== undefined) update.bio = bio;
     if (skills !== undefined) update.skills = skills;
-    if (profileImage !== undefined) update.profileImage = profileImage;
+  if (profileImage !== undefined) update.profileImage = profileImage;
+  if (bannerImage !== undefined) update.bannerImage = bannerImage;
     
     const user = await User.findByIdAndUpdate(
       req.user.id,
@@ -47,35 +48,74 @@ const updateProfile = async (req, res) => {
 };
 
 const getUsersForSidebar = async (req, res) => {
-    try {
-        const loggedInUserId = req.user._id;
-        const loggedInUser = req.user;
+  try {
+    const loggedInUserId = req.user._id;
+    const role = req.user.role;
 
-        let allowedRoles = [];
-        
-        // Define role-based communication rules
-        if (loggedInUser.role === 'ngo') {
-            // NGOs can communicate with volunteers and admins
-            allowedRoles = ['volunteer', 'admin'];
-        } else if (loggedInUser.role === 'volunteer') {
-            // Volunteers can communicate with NGOs and admins
-            allowedRoles = ['ngo', 'admin'];
-        } else if (loggedInUser.role === 'admin') {
-            // Admins can communicate with everyone
-            allowedRoles = ['volunteer', 'ngo', 'admin'];
-        }
-
-        // Find users with allowed roles, excluding the logged-in user
-        const allUsers = await User.find({ 
-            _id: { $ne: loggedInUserId },
-            role: { $in: allowedRoles }
-        }).select("-password");
-
-        res.status(200).json(allUsers);
-    } catch (error) {
-        console.error("Error in getUsersForSidebar: ", error.message);
-        res.status(500).json({ error: "Internal server error" });
+    // Admins: keep existing behavior (can see everyone)
+    if (role === 'admin') {
+      const users = await User.find({ _id: { $ne: loggedInUserId } }).select('-password');
+      return res.status(200).json(users);
     }
+
+    const result = [];
+
+    // Always allow admins to appear as contacts
+    const admins = await User.find({ _id: { $ne: loggedInUserId }, role: 'admin' }).select('-password');
+
+    if (role === 'ngo') {
+      // NGOs: show only volunteers ACCEPTED for at least one of the NGO's events
+      const ngoEventIds = await Opportunity.find({ createdBy: loggedInUserId }).distinct('_id');
+
+      if (ngoEventIds.length > 0) {
+        const volunteerIds = await Application.distinct('volunteerId', {
+          opportunityId: { $in: ngoEventIds },
+          status: 'accepted'
+        });
+
+        if (volunteerIds.length > 0) {
+          const volunteers = await User.find({ _id: { $in: volunteerIds } }).select('-password');
+          result.push(...volunteers);
+        }
+      }
+
+      // Include admins
+      result.push(...admins);
+    } else if (role === 'volunteer') {
+      // Volunteers: show only NGOs of events where THIS volunteer is ACCEPTED
+      const acceptedOppIds = await Application.distinct('opportunityId', {
+        volunteerId: loggedInUserId,
+        status: 'accepted'
+      });
+
+      if (acceptedOppIds.length > 0) {
+        const ngoIds = await Opportunity.find({ _id: { $in: acceptedOppIds } }).distinct('createdBy');
+        if (ngoIds.length > 0) {
+          const ngos = await User.find({ _id: { $in: ngoIds } }).select('-password');
+          result.push(...ngos);
+        }
+      }
+
+      // Include admins
+      result.push(...admins);
+    }
+
+    // De-duplicate by _id
+    const deduped = [];
+    const seen = new Set();
+    for (const u of result) {
+      const key = String(u._id);
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduped.push(u);
+      }
+    }
+
+    return res.status(200).json(deduped);
+  } catch (error) {
+    console.error('Error in getUsersForSidebar: ', error.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
 };
 
 // Admin Analytics Functions

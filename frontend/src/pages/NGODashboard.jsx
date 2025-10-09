@@ -1238,41 +1238,8 @@ const NGODashboard = () => {
   }, []);
 
   // Volunteer Management State (volunteers registered for NGO events)
-  const [volunteers, setVolunteers] = useState([
-    {
-      id: 1,
-      name: 'Alice Johnson',
-      email: 'alice.johnson@email.com',
-      phone: '+1 234-567-8901',
-      skills: ['Environmental Advocacy', 'Event Planning'],
-      registeredEvents: ['Community Garden Project', 'River Cleanup Drive'],
-      totalHours: 25,
-      status: 'active',
-      joinDate: '2024-08-15'
-    },
-    {
-      id: 2,
-      name: 'Robert Chen',
-      email: 'robert.chen@email.com',
-      phone: '+1 234-567-8902',
-      skills: ['Education', 'Public Speaking'],
-      registeredEvents: ['Recycling Awareness Workshop'],
-      totalHours: 12,
-      status: 'active',
-      joinDate: '2024-09-01'
-    },
-    {
-      id: 3,
-      name: 'Maria Garcia',
-      email: 'maria.garcia@email.com',
-      phone: '+1 234-567-8903',
-      skills: ['Community Outreach', 'Social Media'],
-      registeredEvents: ['Community Garden Project', 'Recycling Awareness Workshop'],
-      totalHours: 18,
-      status: 'active',
-      joinDate: '2024-07-20'
-    }
-  ])
+  const [volunteers, setVolunteers] = useState([])
+  const [volunteersLoading, setVolunteersLoading] = useState(false)
 
   // NGO Dashboard Stats
   const [stats, setStats] = useState([
@@ -1370,32 +1337,63 @@ const NGODashboard = () => {
     loadDashboardData();
   }, []);
 
+  // Load volunteers on tab switch to 'volunteers'
+  useEffect(() => {
+    const loadVolunteers = async () => {
+      try {
+        setVolunteersLoading(true);
+        const res = await ngoAPI.getMyVolunteers();
+        const data = res?.data || [];
+        setVolunteers(Array.isArray(data) ? data : (data.data || []));
+      } catch (err) {
+        console.error('Error loading volunteers:', err);
+        // Non-blocking toast to avoid noise if endpoint is unavailable
+        // toast.error('Failed to load volunteers');
+      } finally {
+        setVolunteersLoading(false);
+      }
+    };
+
+    if (activeTab === 'volunteers') {
+      loadVolunteers();
+    }
+  }, [activeTab]);
+
   const loadDashboardData = async () => {
     try {
       setLoading(true);
       console.log('Loading dashboard data...');
 
-      const [statsResponse, eventsResponse, activitiesResponse] = await Promise.all([
+      const [statsResponse, eventsResponse, activitiesResponse, volunteersResponse] = await Promise.all([
         ngoAPI.getDashboardStats(),
         ngoAPI.getMyEvents(),
-        ngoAPI.getRecentActivities()
+        ngoAPI.getRecentActivities(),
+        ngoAPI.getMyVolunteers().catch(err => {
+          console.warn('Failed to load volunteers list:', err?.response?.data || err.message);
+          return { data: [] };
+        })
       ]);
 
       console.log('Stats response:', statsResponse);
       console.log('Events response:', eventsResponse);
-      console.log('Activities response:', activitiesResponse);
+  console.log('Activities response:', activitiesResponse);
+  console.log('Volunteers response:', volunteersResponse);
 
       // Extract data from API response
       const statsData = statsResponse.data || statsResponse;
       const eventsData = eventsResponse.data || eventsResponse;
-      const activitiesData = activitiesResponse.data || [];
+  const activitiesData = activitiesResponse.data || [];
+  const volunteersData = volunteersResponse?.data || [];
 
       console.log('Processed stats data:', statsData);
       console.log('Processed events data:', eventsData);
       console.log('Processed activities data:', activitiesData);
 
-      // Set recent activities
+  // Set recent activities
       setRecentActivities(activitiesData);
+
+  // Set volunteers fetched from backend (only those who applied/accepted for NGO events)
+  setVolunteers(Array.isArray(volunteersData) ? volunteersData : (volunteersData.data || []));
 
       setStats([
         {
@@ -2060,8 +2058,11 @@ const NGODashboard = () => {
             <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Registered Volunteers</h2>
             <p className="text-gray-600 dark:text-gray-400">Manage volunteers registered for your events</p>
           </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            Total: {volunteers.length} volunteers
+          <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+            {volunteersLoading && (
+              <span className="inline-flex items-center gap-2"><span className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span> Loading…</span>
+            )}
+            <span>Total: {volunteers.length} volunteers</span>
           </div>
         </div>
       </div>
@@ -2072,8 +2073,8 @@ const NGODashboard = () => {
           <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <Users className="w-8 h-8 text-gray-400 dark:text-gray-500" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">No Volunteers Yet</h3>
-          <p className="text-gray-600 dark:text-gray-400">Volunteers will appear here when they register for your events</p>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">{volunteersLoading ? 'Loading Volunteers…' : 'No Volunteers Yet'}</h3>
+          <p className="text-gray-600 dark:text-gray-400">{volunteersLoading ? 'Fetching your volunteers from the server' : 'Volunteers will appear here when they register for your events'}</p>
         </div>
       ) : (
         <div className="grid gap-6">
