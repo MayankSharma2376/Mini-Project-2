@@ -264,14 +264,14 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen max-h-screen flex flex-col lg:flex-row overflow-hidden">
+    <div className="h-screen flex flex-col lg:flex-row overflow-hidden">
       {/* Left Panel: Branding and Features */}
       <div 
-        className="w-full lg:w-1/2 bg-cover bg-center relative hidden lg:block max-h-screen overflow-hidden"
+        className="w-full lg:w-1/2 bg-cover bg-center relative hidden lg:block h-screen overflow-hidden"
         style={{ backgroundImage: 'linear-gradient(135deg, rgba(34, 139, 34, 0.85) 0%, rgba(0, 100, 0, 0.75) 50%, rgba(0, 0, 0, 0.6) 100%), url("./Waste.jpg")' }}
       >
         <div className="absolute inset-0 bg-gradient-to-br from-green-800/60 via-green-900/40 to-black/70"></div>
-        <div className="relative z-10 px-6 lg:px-10 py-8 text-white h-full flex flex-col justify-between min-h-screen max-h-screen overflow-y-auto">
+        <div className="relative z-10 px-6 lg:px-10 py-8 text-white h-full flex flex-col justify-between overflow-y-auto">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30">
               <img src="./recycle.svg" alt="WasteZero Logo" className="w-6 h-6" />
@@ -306,7 +306,7 @@ export default function AuthPage() {
       </div>
 
       {/* Right Panel: Login/Registration Form */}
-      <div className="w-full lg:w-1/2 bg-gray-50 dark:bg-gray-900 flex flex-col max-h-screen">
+      <div className="w-full lg:w-1/2 bg-gray-50 dark:bg-gray-900 flex flex-col h-screen">
         <div className="flex-shrink-0 p-4 lg:p-6 pb-2 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
           <div className="flex bg-gray-200 dark:bg-gray-800 rounded-lg p-1 w-full max-w-sm mx-auto">
             <button onClick={() => { setIsLogin(true); setIsOtpStep(false); navigate('/login'); }} className={`w-1/2 p-2 rounded-md font-semibold transition-all ${isLogin ? 'bg-white dark:bg-gray-700 shadow-md text-[#4f685b] dark:text-green-300 font-bold' : 'text-gray-600 dark:text-gray-400'}`}>Login</button>

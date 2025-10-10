@@ -1,6 +1,9 @@
 const User = require('../models/user.model');
 const Opportunity = require('../models/opportunity.model');
 const Application = require('../models/application.model');
+const Conversation = require('../models/conversation.model');
+const Message = require('../models/message.model');
+const { getReceiverSocketId, io } = require('../socket/socket');
 const { createApplicationStatusNotification, createNewEventNotification } = require('./notification.controller');
 
 // Get NGO profile
@@ -20,7 +23,7 @@ const getProfile = async (req, res) => {
 // Update NGO profile
 const updateProfile = async (req, res) => {
   try {
-    const { name, email, location, bio, skills, profileImage } = req.body;
+  const { name, email, location, bio, skills, profileImage, bannerImage } = req.body;
     const update = {};
     
     if (name !== undefined) update.name = name;
@@ -28,7 +31,8 @@ const updateProfile = async (req, res) => {
     if (location !== undefined) update.location = location;
     if (bio !== undefined) update.bio = bio;
     if (skills !== undefined) update.skills = skills;
-    if (profileImage !== undefined) update.profileImage = profileImage;
+  if (profileImage !== undefined) update.profileImage = profileImage;
+  if (bannerImage !== undefined) update.bannerImage = bannerImage;
     
     const user = await User.findByIdAndUpdate(
       req.user.id,
@@ -762,7 +766,7 @@ const getVolunteerDetails = async (req, res) => {
   }
 };
 
-// Send Message to Volunteer
+// Send Message to Volunteer (enforce NGO-volunteer relationship)
 const sendMessageToVolunteer = async (req, res) => {
   try {
     const { volunteerId } = req.params;
@@ -776,12 +780,48 @@ const sendMessageToVolunteer = async (req, res) => {
       });
     }
 
-    // In a real app, save message to database and/or send notification
-    // For now, return mock success response
-    res.json({
-      success: true,
-      message: 'Message sent successfully'
-    });
+    // Verify volunteer exists
+    const volunteer = await User.findById(volunteerId).select('_id role');
+    if (!volunteer || volunteer.role !== 'volunteer') {
+      return res.status(404).json({ success: false, message: 'Volunteer not found' });
+    }
+
+    // Check relationship: volunteer must be accepted for any event created by this NGO
+    const ngoEventIds = await Opportunity.find({ createdBy: ngoId }).distinct('_id');
+    if (!ngoEventIds || ngoEventIds.length === 0) {
+      return res.status(403).json({ success: false, message: 'No eligible events found for messaging' });
+    }
+
+    const acceptedApp = await Application.findOne({
+      volunteerId,
+      opportunityId: { $in: ngoEventIds },
+      status: 'accepted'
+    }).select('_id');
+
+    if (!acceptedApp) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only message volunteers registered (accepted) to your events'
+      });
+    }
+
+    // Create or reuse conversation and save message
+    let conversation = await Conversation.findOne({ participants: { $all: [ngoId, volunteerId] } });
+    if (!conversation) {
+      conversation = await Conversation.create({ participants: [ngoId, volunteerId], messages: [] });
+    }
+
+    const newMessage = new Message({ senderId: ngoId, receiverId: volunteerId, message });
+    conversation.messages.push(newMessage._id);
+    await Promise.all([conversation.save(), newMessage.save()]);
+
+    // Emit via socket if receiver online
+    const receiverSocketId = getReceiverSocketId(volunteerId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit('newMessage', newMessage);
+    }
+
+    return res.json({ success: true, message: 'Message sent successfully', data: newMessage });
   } catch (error) {
     console.error('Error sending message to volunteer:', error);
     res.status(500).json({

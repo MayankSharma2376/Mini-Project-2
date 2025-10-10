@@ -17,7 +17,7 @@ import MessagePage from './pages/MessagePage';
 import MyProfile from './pages/MyProfile';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { BlockedUserProvider, useBlockedUser } from './contexts/BlockedUserContext';
-import { UserProvider } from './contexts/UserContext';
+import { UserProvider, useUser } from './contexts/UserContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { setGlobalBlockedUserHandler } from './services/api';
 import BlockedUserScreen from './components/BlockedUserScreen';
@@ -67,35 +67,44 @@ const AppContent = () => {
         <Route path="/otp" element={<Forgot_Password />} />
         <Route path="/not-found" element={<NotFoundPage/>} />
 
-        {/* Admin Routes */}
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="message" element={<MessagePage />} />
-          <Route path="notifications" element={<NotificationsPage />} />
-          <Route path="profile" element={<MyProfile />} />
-          <Route path="attendance" element={<AttendanceManager />} /> 
-          <Route path="settings" element={<SettingsPage/>} />
-        </Route>
+        {/* Protected Routes */}
+        <Route element={<RequireAuth />}>
+          {/* Admin Routes (admin only) */}
+          <Route element={<RequireRole role="admin" />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="message" element={<MessagePage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="profile" element={<MyProfile />} />
+              <Route path="attendance" element={<AttendanceManager />} /> 
+              <Route path="settings" element={<SettingsPage/>} />
+            </Route>
+          </Route>
 
-        {/* Volunteer Routes */}
-        <Route path="/volunteer" element={<VolunteerLayout />}>
-          <Route index element={<VolunteerDashboard />} />
-          <Route path="dashboard" element={<VolunteerDashboard />} />
-          <Route path="message" element={<MessagePage />} />
-          <Route path="notifications" element={<NotificationsPage />} />
-          <Route path="profile" element={<MyProfile />} />
-          <Route path="settings" element={<SettingsPage/>} />
-        </Route>
+          {/* Volunteer Routes (volunteer only) */}
+          <Route element={<RequireRole role="volunteer" />}>
+            <Route path="/volunteer" element={<VolunteerLayout />}>
+              <Route index element={<VolunteerDashboard />} />
+              <Route path="dashboard" element={<VolunteerDashboard />} />
+              <Route path="message" element={<MessagePage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="profile" element={<MyProfile />} />
+              <Route path="settings" element={<SettingsPage/>} />
+            </Route>
+          </Route>
 
-        {/* NGO Routes */}
-        <Route path="/ngo" element={<NGOLayout />}>
-          <Route index element={<NGODashboard />} />
-          <Route path="dashboard" element={<NGODashboard />} />
-          <Route path="message" element={<MessagePage />} />
-          <Route path="notifications" element={<NotificationsPage />} />
-          <Route path="profile" element={<MyProfile />} />
-          <Route path="settings" element={<SettingsPage/>} />
+          {/* NGO Routes (ngo only) */}
+          <Route element={<RequireRole role="ngo" />}>
+            <Route path="/ngo" element={<NGOLayout />}>
+              <Route index element={<NGODashboard />} />
+              <Route path="dashboard" element={<NGODashboard />} />
+              <Route path="message" element={<MessagePage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="profile" element={<MyProfile />} />
+              <Route path="settings" element={<SettingsPage/>} />
+            </Route>
+          </Route>
         </Route>
 
         {/* Catch all route - redirect to home */}
@@ -114,6 +123,61 @@ const AppContent = () => {
       />
     </div>
   );
+};
+
+// Route guard: redirects unauthenticated users to /login
+const RequireAuth = () => {
+  const { loading } = useUser();
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <div className="animate-spin inline-block w-8 h-8 border-[3px] border-current border-t-transparent text-gray-400 rounded-full" role="status" aria-label="loading" />
+      </div>
+    );
+  }
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Outlet />;
+};
+
+// Role guard: ensures route access only for the specified role
+const RequireRole = ({ role }) => {
+  const { user, loading } = useUser();
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <div className="animate-spin inline-block w-8 h-8 border-[3px] border-current border-t-transparent text-gray-400 rounded-full" role="status" aria-label="loading" />
+      </div>
+    );
+  }
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Determine current role (prefer context; fallback to localStorage)
+  const currentRole = user?.role || (() => {
+    try { return JSON.parse(localStorage.getItem('user') || '{}')?.role; } catch { return undefined; }
+  })();
+
+  if (!currentRole) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (currentRole !== role) {
+    // Redirect to the correct home for the logged-in user's role
+    const home = currentRole === 'admin' ? '/admin' : currentRole === 'volunteer' ? '/volunteer' : currentRole === 'ngo' ? '/ngo' : '/';
+    return <Navigate to={home} replace />;
+  }
+
+  return <Outlet />;
 };
 
 function App() {

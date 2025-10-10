@@ -105,6 +105,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  // Base64 or URL for profile banner image
+  bannerImage: {
+    type: String,
+    default: ''
+  },
   otp: { 
     type: String 
   }, // store OTP temporarily

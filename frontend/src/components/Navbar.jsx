@@ -5,6 +5,7 @@ import { resetBlockedUserFlag } from '../services/api';
 import { SearchIcon, Bell, ChevronDown, User, Settings, LogOut } from 'lucide-react';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useUser } from '../contexts/UserContext';
+import { volunteerAPI } from '../services/api';
 
 
 const Navbar = () => {
@@ -13,6 +14,7 @@ const Navbar = () => {
   const { unreadCount } = useNotifications();
   const { user, clearUser, loading, fetchUserProfile } = useUser();
   const dropdownRef = useRef(null);
+  const searchRef = useRef(null);
 
   // Fallback user info from localStorage if context is loading
   const fallbackUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -47,6 +49,96 @@ const Navbar = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // --- Search state and behavior ---
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchDebounceRef = useRef(null);
+  const abortRef = useRef(null);
+  const prevResultIdsRef = useRef('');
+
+  // Close search results on outside click
+  useEffect(() => {
+    const onDocClick = (e) => {
+      if (!searchRef.current) return;
+      if (!searchRef.current.contains(e.target)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, []);
+
+  const runSearch = async (q) => {
+    const term = q.trim();
+    if (term.length === 0) { setSearchResults([]); setSearchOpen(false); prevResultIdsRef.current=''; return; }
+    if (term.length < 2) { return; }
+    try {
+      setSearchLoading(true);
+      // Cancel any in-flight request
+      if (abortRef.current) {
+        abortRef.current.abort();
+      }
+      abortRef.current = new AbortController();
+      // use volunteer endpoint for opportunities listing; server does not restrict by role
+      const resp = await volunteerAPI.getAllOpportunities({ q: term, limit: 8, includeMatched: 'false' }, { signal: abortRef.current.signal });
+      const data = resp?.data || resp; // support both shapes
+      const arr = Array.isArray(data) ? data : [];
+      const ids = arr.map(x => x._id).join(',');
+      if (ids !== prevResultIdsRef.current) {
+        prevResultIdsRef.current = ids;
+        setSearchResults(arr);
+      }
+      // keep dropdown open while searching/typing as long as there's a query
+      if (term.length > 0) setSearchOpen(true);
+    } catch (err) {
+      if (err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED') {
+        // ignore; another search is in-flight
+      } else {
+        console.error('Search failed', err);
+        // keep previous results to avoid flicker
+      }
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const onSearchChange = (e) => {
+    const val = e.target.value;
+    setSearchQuery(val);
+    const term = val.trim();
+    if (term.length > 0 && term.length >= 2) {
+      if (!searchOpen) setSearchOpen(true);
+    } else if (term.length === 0) {
+      // small delay to avoid flicker when quickly deleting
+      setTimeout(() => { setSearchOpen(false); setSearchResults([]); }, 60);
+    }
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => runSearch(val), 300);
+  };
+
+  const openFullSearch = (term, id) => {
+    setSearchOpen(false);
+    // Navigate to opportunities tab and optionally highlight a specific card.
+    // Do NOT pass the query; keep page search independent from navbar search.
+    const idPart = id ? `&id=${encodeURIComponent(id)}` : '';
+    navigate(`/volunteer?tab=opportunities${idPart}`);
+  };
+
+  const onSearchKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      setSearchOpen(false);
+    } else if (e.key === 'Enter') {
+      openFullSearch(searchQuery);
+    }
+  };
+
+  const goToOpportunity = (op) => {
+    // Navigate to the opportunities list, pre-filled and target the selected card
+    openFullSearch(op?.title || searchQuery, op?._id);
+  };
 
   const handleLogout = () => {
     // Clear user data from context and localStorage
@@ -102,9 +194,53 @@ const Navbar = () => {
 
           {/* right panel - search and avatar */}
           <div className='flex items-center gap-5'>
-            <div className='flex items-center border border-gray-300 dark:border-gray-600 rounded-full px-3 py-1 bg-gray-50 dark:bg-gray-800 focus-within:ring-2 focus-within:ring-green-500 dark:focus-within:ring-green-600 transition-all duration-200'>
-              <SearchIcon className='text-gray-400 dark:text-gray-500 size-5 mr-2 flex-shrink-0' />
-              <input type="text" placeholder="Search opportunities..." className="outline-none bg-transparent flex-1 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500" />
+            <div ref={searchRef} className='relative w-64 sm:w-80'>
+              <div className='flex items-center border border-gray-300 dark:border-gray-600 rounded-full px-3 py-1 bg-gray-50 dark:bg-gray-800 focus-within:ring-2 focus-within:ring-green-500 dark:focus-within:ring-green-600 transition-all duration-200'>
+                <SearchIcon className='text-gray-400 dark:text-gray-500 size-5 mr-2 flex-shrink-0' />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={onSearchChange}
+                  onFocus={() => { if (searchResults.length) setSearchOpen(true); }}
+                  onKeyDown={onSearchKeyDown}
+                  placeholder="Search opportunities..."
+                  className="outline-none bg-transparent flex-1 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500"
+                />
+                {searchLoading && (
+                  <span className="ml-2 inline-block w-4 h-4 border-2 border-gray-300 dark:border-gray-600 border-t-green-500 rounded-full animate-spin" />
+                )}
+              </div>
+              {searchOpen && (
+                <div className='absolute mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-80 overflow-auto'>
+                  {searchLoading ? (
+                    <div className='p-3 text-sm text-gray-500 dark:text-gray-400'>Searching…</div>
+                  ) : searchResults.length === 0 ? (
+                    <div className='p-3 text-sm text-gray-500 dark:text-gray-400'>No results</div>
+                  ) : (
+                    <ul className='py-1'>
+                      {searchResults.map((op) => (
+                        <li key={op._id}>
+                          <button
+                            className='w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors'
+                            onClick={() => goToOpportunity(op)}
+                          >
+                            <div className='text-sm font-medium text-gray-900 dark:text-gray-100 truncate'>{op.title}</div>
+                            <div className='text-xs text-gray-500 dark:text-gray-400 truncate'>{op.location} • {op.category}</div>
+                          </button>
+                        </li>
+                      ))}
+                      <li>
+                        <button
+                          className='w-full text-left px-3 py-2 text-sm text-green-700 dark:text-green-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors'
+                          onClick={() => openFullSearch(searchQuery)}
+                        >
+                          See all results for "{searchQuery}"
+                        </button>
+                      </li>
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
             <div className="relative">
               <button 
@@ -147,7 +283,7 @@ const Navbar = () => {
                       </span>
                       {displayUser.location && (
                         <span className='text-xs text-gray-400 dark:text-gray-500'>
-                          📍 {displayUser.location}
+                        {displayUser.location}
                         </span>
                       )}
                     </div>
