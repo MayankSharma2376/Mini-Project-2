@@ -42,7 +42,7 @@ const testUsers = [
 async function createTestUsers() {
   try {
     // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/wastezero');
+    await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/wastezero');
     console.log('Connected to MongoDB');
 
     // Clear existing test users
